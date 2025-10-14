@@ -207,83 +207,83 @@ compute_metrics5<-function(df,
 
 
 
-#### IMPORT AND FILTERING NETWORKS ####
-######### load data version 1.3 10.5281/zenodo.15183272
-lanuza<-readRDS("G:\\Il mio Drive\\Articoli\\Resource Overlap EU\\Interaction_data.rds")
-sum(lanuza$Interaction)
-
-####### create a study x network x date ID
-lanuza$id<-as.factor(
-  paste(lanuza$Study_id, lanuza$Network_id, lanuza$Date, sep = "//")) # id used for further analyses
-
-################## remove all network ids that do not meet including criteria
+##### IMPORT AND FILTERING NETWORKS ####
+########## load data version 1.3 10.5281/zenodo.15183272
+#lanuza<-readRDS("G:\\Il mio Drive\\Articoli\\Resource Overlap EU\\Interaction_data.rds")
+#sum(lanuza$Interaction)
+#
+######## create a study x network x date ID
+#lanuza$id<-as.factor(
+#  paste(lanuza$Study_id, lanuza$Network_id, lanuza$Date, sep = "//")) # id used for further analyses
+#
+################### remove all network ids that do not meet including criteria
+#
+## Convert to data.table if not already
+#setDT(lanuza)
+#
+## Keep only ids that contain "Apis mellifera"
+#df_withApis <- lanuza[lanuza[, any(Pollinator_accepted_name == "Apis mellifera"), by = id][V1 == TRUE, id], on = "id"]
+#length(unique(lanuza$id)) ### all nets
+#length(unique(df_withApis$id)) ### all nets with Apis
+#sum(df_withApis$Interaction)
+## Define the bee families
+#bee_families <- c("Apidae", "Halictidae", "Andrenidae", "Colletidae", "Megachilidae", "Melittidae")
+#
+## Create the Pollinator_yes column based on your criteria
+#df_withApis <- df_withApis %>%
+#  dplyr::mutate(
+#    Pollinator_yes = case_when(
+#      Pollinator_order == "Coleoptera" ~ "Coleo.",
+#      Pollinator_order == "Diptera" & Pollinator_family == "Syrphidae" ~ "Syrph.",
+#      Pollinator_order == "Diptera" & Pollinator_family != "Syrphidae" ~ "Non-syr.",
+#      Pollinator_order == "Hymenoptera" & Pollinator_family %in% bee_families ~ "Bees",
+#      Pollinator_order == "Hymenoptera" & !(Pollinator_family %in% bee_families) ~ "Hymen.",
+#      Pollinator_order == "Lepidoptera" ~ "Lepid.",
+#      TRUE ~ "no"
+#    )
+#  )
+#
+###sum of the interactions for each plant x pollinator interaction in each site x date
+#dfs <- df_withApis %>%
+#  group_by(Bioregion, Country, Study_id, EuPPollNet_habitat, Network_id, Date, id,Pollinator_yes,
+#           Pollinator_order, Pollinator_family, Pollinator_genus, Plant_accepted_name, Pollinator_accepted_name) %>%
+#  summarise(Interactions = sum(Interaction, na.rm = TRUE), .groups = "drop")
+#
+###### rename variables
+#dfs <- dfs %>%
+#  dplyr::rename(pollinator = Pollinator_accepted_name)
+#dfs <- dfs %>%
+#  dplyr::rename(plant = Plant_accepted_name)
+#dfs <- dfs %>%
+#  dplyr::rename(interaction = Interactions)
+#
 
 # Convert to data.table if not already
-setDT(lanuza)
+#DT <- as.data.table(dfs)
 
-# Keep only ids that contain "Apis mellifera"
-df_withApis <- lanuza[lanuza[, any(Pollinator_accepted_name == "Apis mellifera"), by = id][V1 == TRUE, id], on = "id"]
-length(unique(lanuza$id)) ### all nets
-length(unique(df_withApis$id)) ### all nets with Apis
-sum(df_withApis$Interaction)
-# Define the bee families
-bee_families <- c("Apidae", "Halictidae", "Andrenidae", "Colletidae", "Megachilidae", "Melittidae")
-
-# Create the Pollinator_yes column based on your criteria
-df_withApis <- df_withApis %>%
-  dplyr::mutate(
-    Pollinator_yes = case_when(
-      Pollinator_order == "Coleoptera" ~ "Coleo.",
-      Pollinator_order == "Diptera" & Pollinator_family == "Syrphidae" ~ "Syrph.",
-      Pollinator_order == "Diptera" & Pollinator_family != "Syrphidae" ~ "Non-syr.",
-      Pollinator_order == "Hymenoptera" & Pollinator_family %in% bee_families ~ "Bees",
-      Pollinator_order == "Hymenoptera" & !(Pollinator_family %in% bee_families) ~ "Hymen.",
-      Pollinator_order == "Lepidoptera" ~ "Lepid.",
-      TRUE ~ "no"
-    )
-  )
-
-##sum of the interactions for each plant x pollinator interaction in each site x date
-dfs <- df_withApis %>%
-  group_by(Bioregion, Country, Study_id, EuPPollNet_habitat, Network_id, Date, id,Pollinator_yes,
-           Pollinator_order, Pollinator_family, Pollinator_genus, Plant_accepted_name, Pollinator_accepted_name) %>%
-  summarise(Interactions = sum(Interaction, na.rm = TRUE), .groups = "drop")
-
-##### rename variables
-dfs <- dfs %>%
-  dplyr::rename(pollinator = Pollinator_accepted_name)
-dfs <- dfs %>%
-  dplyr::rename(plant = Plant_accepted_name)
-dfs <- dfs %>%
-  dplyr::rename(interaction = Interactions)
-
-
-# Convert to data.table if not already
-DT <- as.data.table(dfs)
-
-# Step 1: Remove ids with interaction > 1000
-ids_high_interaction <- DT[interaction > 1000, unique(id)]
-
-# Step 2: Remove ids with only one plant
-ids_one_plant <- DT[, .(n_plant = uniqueN(plant)), by = id][n_plant == 1, id]
-
-# Step 3: Remove ids with only one pollinator
-ids_one_pollinator <- DT[, .(n_pollinator = uniqueN(pollinator)), by = id][n_pollinator == 1, id]
-
-# Step 4: Combine all sets of problematic ids
-ids_to_remove <- unique(c(ids_high_interaction, ids_one_plant, ids_one_pollinator))
-
-# Step 5: Filter them out
-DT_filtered <- DT[!id %in% ids_to_remove] ########### WORKING DATASET 
-sum(DT_filtered$interaction)
-
-# Step 6: Keep only required columns
-dt_simple <- unique(DT_filtered [, .(plant, pollinator, interaction, id)])
-dt_simple[, `:=`(plant = as.character(plant),
-                 pollinator = as.character(pollinator),
-                 id = as.character(id),
-                 interaction = as.numeric(interaction))]
-
+## Step 1: Remove ids with interaction > 1000
+#ids_high_interaction <- DT[interaction > 1000, unique(id)]
+#
+## Step 2: Remove ids with only one plant
+#ids_one_plant <- DT[, .(n_plant = uniqueN(plant)), by = id][n_plant == 1, id]
+#
+## Step 3: Remove ids with only one pollinator
+#ids_one_pollinator <- DT[, .(n_pollinator = uniqueN(pollinator)), by = id][n_pollinator == 1, id]
+#
+## Step 4: Combine all sets of problematic ids
+#ids_to_remove <- unique(c(ids_high_interaction, ids_one_plant, ids_one_pollinator))
+#
+## Step 5: Filter them out
+#DT_filtered <- DT[!id %in% ids_to_remove] ########### WORKING DATASET 
+#sum(DT_filtered$interaction)
+#
+## Step 6: Keep only required columns
+#dt_simple <- unique(DT_filtered [, .(plant, pollinator, interaction, id)])
+#dt_simple[, `:=`(plant = as.character(plant),
+#                 pollinator = as.character(pollinator),
+#                 id = as.character(id),
+#                 interaction = as.numeric(interaction))]
+#
 
 #### CREATE NULL MODELS USING PATEFIELD ####
 # Create incidence matrix list (observed)
