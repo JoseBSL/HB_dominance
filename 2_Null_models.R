@@ -55,7 +55,9 @@ net_long = rbindlist(lapply(names(net_list), function(name) {
 setcolorder(net_long, c("id", "type", "plant", "pollinator", "interaction"))
 
 # Remove 0s
-net_long_no0 <- net_long[interaction > 0]
+net_long_no0 = net_long[interaction > 0]
+
+#Save data
 saveRDS(net_long_no0, "Data/net_long_no0.rds")
 
 
