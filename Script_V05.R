@@ -335,10 +335,10 @@ net_long_no0 <- net_long[interaction > 0]
 saveRDS(net_long_no0, "G:\\Il mio Drive\\Articoli\\Resource Overlap EU\\Null_Pate_500.rds")
 
 ## create meaningful ids
-net_long_no0 <-net_long_no0  %>%
-  dplyr::rename(null_id=type)
-net_long_no0[, Type := ifelse(null_id == "observed", "observed", "null")]
-net_long_no0[, final_id := ifelse(Type == "observed", id, null_id)]
+#net_long_no0 <-net_long_no0  %>%
+#  dplyr::rename(null_id=type)
+#net_long_no0[, Type := ifelse(null_id == "observed", "observed", "null")]
+#net_long_no0[, final_id := ifelse(Type == "observed", id, null_id)]
 
 # COMPUTE ALL METRICS ####
 net_long_no0<-readRDS("G:\\Il mio Drive\\Articoli\\Resource Overlap EU\\Null_Pate_500.rds")

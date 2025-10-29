@@ -3,7 +3,7 @@ library(data.table)
 library(dplyr)
 
 # COMPUTE ALL METRICS ####
-net_long_no0 = readRDS("net_long_no0.rds")
+net_long_no012 = readRDS("Data/net_long_no0.rds")
 
 #Create meaningful ids
 net_long_no0 = net_long_no0  %>%
