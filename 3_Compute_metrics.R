@@ -3,7 +3,7 @@ library(data.table)
 library(dplyr)
 
 # COMPUTE ALL METRICS ####
-net_long_no012 = readRDS("Data/net_long_no0.rds")
+net_long_no0 = readRDS("Data/net_long_no0.rds")
 
 #Create meaningful ids
 net_long_no0 = net_long_no0  %>%
@@ -15,7 +15,7 @@ net_long_no0[, final_id := ifelse(Type == "observed", id, null_id)]
 setDT(net_long_no0)
 
 metrics_all_dt <- net_long_no0[, {
-  res <- compute_metrics5(.SD,
+  res <- compute_metrics(.SD,
                           focal_species   = "Apis mellifera",
                           return_observed = TRUE)
   if (is.null(res)) NULL else as.data.table(res)
