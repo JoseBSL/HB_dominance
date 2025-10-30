@@ -3,16 +3,16 @@ library(data.table)
 library(dplyr)
 
 #### Load data ####
-# Version: 1.3
-# DOI: 10.5281/zenodo.15183272
+#Version: 1.3
+#DOI: 10.5281/zenodo.15183272
 lanuza = readRDS("Data/Interaction_data.rds")
-# Summarize the total number of interactions
+#Summarize the total number of interactions
 sum(lanuza$Interaction)
 
 
 #### Data preparation ####
-# Remove all network IDs that do not meet the inclusion criteria
-# Ensure that is in datatable format
+#Remove all network IDs that do not meet the inclusion criteria
+#Ensure that is in datatable format
 setDT(lanuza)
 #Create a study x network x date ID
 lanuza$id = as.factor(
