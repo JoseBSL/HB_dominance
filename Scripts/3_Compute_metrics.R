@@ -1,9 +1,13 @@
-#### Load libraries ####
+#COMPUTE ALL METRICS ####
+
+####Load libraries ####
 library(data.table)
 library(dplyr)
 
-# COMPUTE ALL METRICS ####
+#Load data
 net_long_no0 = readRDS("Data/net_long_no0.rds")
+#Function to give str to data (used at the end of the code)
+source("Scripts/Processing/Functions/Change_str.R")
 
 #Create meaningful ids
 net_long_no0 = net_long_no0  %>%
