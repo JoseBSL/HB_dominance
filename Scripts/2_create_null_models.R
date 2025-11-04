@@ -1,9 +1,20 @@
+############################################################ #
+#Script name: "2_create_null_models.R"
+#Objective: Generate null models using Patefield algorithm
+#
+#Input: Data/filtered_interaction_data.rds
+#Output: Data/long_format_nulls.rds
+#
+#Author: L Marini 
+#Reviewer: JB Lanuza
+#Year: 2025
+############################################################ #
 #### Load libraries ####
 library(data.table)
 library(dplyr)
 
-#### Load processed data ####
-dt_simple = readRDS("Data/dt_simple.rds")
+#### Load data ####
+dt_simple = readRDS("Data/filtered_interaction_data.rds")
 
 #### CREATE NULL MODELS USING PATEFIELD ####
 # Create incidence matrix list (observed)
@@ -57,8 +68,8 @@ setcolorder(net_long, c("id", "type", "plant", "pollinator", "interaction"))
 # Remove 0s
 net_long_no0 = net_long[interaction > 0]
 
-#Save data
-saveRDS(net_long_no0, "Data/net_long_no0.rds")
+#### Save data ####
+saveRDS(net_long_no0, "Data/long_format_nulls.rds")
 
 
 

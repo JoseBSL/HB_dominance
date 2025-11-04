@@ -1,3 +1,15 @@
+############################################################ #
+#Script name: "1_prepare_interaction_data.R"
+#Objective: Filter and prepare plant-pollinator interaction data
+#          with *Apis mellifera*
+#
+#Input: Data/raw_interaction_data.rds
+#Output: Data/filtered_interaction_data.rds
+#
+#Author: L Marini 
+#Reviewer: JB Lanuza
+#Year: 2025
+############################################################ #
 #### Load libraries ####
 library(data.table)
 library(dplyr)
@@ -5,10 +17,9 @@ library(dplyr)
 #### Load data ####
 #Version: 1.3
 #DOI: 10.5281/zenodo.15183272
-lanuza = readRDS("Data/Interaction_data.rds")
+lanuza = readRDS("Data/raw_interaction_data.rds")
 #Summarize the total number of interactions
 sum(lanuza$Interaction)
-
 
 #### Data preparation ####
 #Remove all network IDs that do not meet the inclusion criteria
@@ -103,4 +114,5 @@ dt_simple[, `:=`(plant = as.character(plant),
                  interaction = as.numeric(interaction))]
 
 #### Save data ####
-saveRDS(dt_simple, "Data/dt_simple.rds")
+saveRDS(dt_simple, "Data/filtered_interaction_data.rds")
+saveRDS(df_withApis, "Data/data_to_extract_climatic.rds")
