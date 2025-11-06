@@ -29,7 +29,7 @@ make_matrix = function(subdt) {
   return(mat)
 }
 
-# Build list of matrices: observed + 100 nulls per id
+# Build list of matrices: observed + 500 nulls per id
 net_list = list()
 
 for (network_id in unique(dt_simple$id)) {

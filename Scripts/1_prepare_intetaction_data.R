@@ -115,4 +115,5 @@ dt_simple[, `:=`(plant = as.character(plant),
 
 #### Save data ####
 saveRDS(dt_simple, "Data/filtered_interaction_data.rds")
+saveRDS(DT_filtered, "Data/filtered_interaction_data_all_cols.rds")
 saveRDS(df_withApis, "Data/data_to_extract_climatic.rds")
