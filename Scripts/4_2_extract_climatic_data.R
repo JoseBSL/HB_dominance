@@ -1,11 +1,11 @@
 ############################################################ #
-# Script name: "5_extract_climatic_data.R"
+# Script name: "4_2_extract_climatic_data.R"
 # Objective: Extract climatic data from https://www.chelsa-climate.org/ 
 #
 # Input1:  Data/CHELSA_EUR11_tas_norm_1981-2005_V1.1.nc
 #         Note: file name renames intact to match the original source
 # Input2: Data/data_to_extract_climatic.rds
-#Output: Data/temperature_summary.rds 
+#Output: Data/temperature.rds 
 #
 # Author: L. Marini
 # Reviewer: J.B. Lanuza
@@ -18,7 +18,7 @@ library(sf)
 library(exactextractr)
 
 #### Load data ####
-df_withApis = readRDS("Data/data_to_extract_climatic.rds")
+data_to_extract_climatic = readRDS("Data/data_to_extract_climatic.rds")
 
 r = rast("Data/CHELSA_EUR11_tas_norm_1981-2005_V1.1.nc")
 Temp_summer = (r[[5]]+r[[6]]+r[[7]]+r[[8]])/4 ## average summer temperature (May-Aug)
@@ -26,7 +26,7 @@ summary(Temp_summer)
 
 #### Extract climatic data from coordinates ####
 #Obtain coordinates per network
-network_coords = df_withApis %>%
+network_coords = data_to_extract_climatic %>%
   select(Latitude, Longitude, id) %>%
   distinct()
 #Convert to sf with WGS84

@@ -7,8 +7,8 @@
 #   - Scripts/compute_metric_function.R  (defines metric function)
 #
 # Outputs:
-#   - Data/all_metrics_500.rds  (metrics for all networks: observed + nulls)
-#   - Data/ses_tbl.rds          (observed metrics with SES columns added)
+#   - Data/pollinator_metrics.rds  (metrics for all networks: observed + nulls)
+#   - Data/pollinator_metrics_ses.rds          (observed metrics with SES columns added)
 #
 # Author: L Marini
 # Reviewer: JB Lanuza
@@ -39,7 +39,7 @@ metrics_all_dt = net_long_no0[, {
   if (is.null(res)) NULL else as.data.table(res)
 }, by = .(final_id, id, Type)]
 
-saveRDS(metrics_all_dt, "Data/all_metrics_500.rds")
+saveRDS(metrics_all_dt, "Data/pollinator_metrics.rds")
 
 ################  Z-score ##### 
 # columns to compute SES
@@ -48,17 +48,14 @@ metric_cols = c(
   "morisita_horn",
   "pref_pianka",
   "pref_morisita_horn",
-  "pac_from_apis", 
   "norm_degree", 
-  "d_prime_no_apis_finite", 
-  "d_prime", 
   "pdi"
 )
 
 #################################################### COMPUTE SES (Z-SCORES) ####
 
 # 1) Summary of nulls: mean, sd, IQR (+ optional: number of distinct values)
-null_stats <- metrics_all_dt %>%
+null_stats = metrics_all_dt %>%
   dplyr::filter(Type == "null") %>%
   dplyr::group_by(id, pollinator) %>%
   dplyr::summarise(
@@ -99,6 +96,6 @@ head(ses_tbl)
 hist(ses_tbl$SES_pdi)
 
 #### Save data ####
-saveRDS(ses_tbl, "Data/ses_tbl.rds")
+saveRDS(ses_tbl, "Data/pollinator_metrics_ses.rds")
 
 
