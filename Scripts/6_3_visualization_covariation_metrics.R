@@ -33,12 +33,14 @@ df_subset <- apis_summary2_no1[, vars, drop = FALSE]
 # Custom lower panel: GAM + linear
 lower_gam_lm <- function(data, mapping, ...) {
   ggplot(data = data, mapping = mapping) +
-    geom_point(color = "gray40", size = 0.7) +
-    geom_smooth(method = "lm", se = FALSE, color = "blue", linetype = "dashed", ...) +
-    geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), se = FALSE, color = "red", ...)
+    geom_point(shape = 16, color = "lightblue", size = 0.8, alpha = 0.9) +  # shape=16 removes border
+    geom_smooth(method = "lm", se = FALSE, color = "orange", linetype = "dashed", ...) +
+    geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), se = FALSE, color = "black", ...) +
+    scale_x_continuous(n.breaks = 4) +   # limit x-axis ticks
+    scale_y_continuous(n.breaks = 4) 
 }
 
-ggpairs(
+p = ggpairs(
   df_subset,
   columns = c("plant_n","pollinator_n","Apis_ndegree",  "Dominance"),
   columnLabels = c("Plant richness", "Pollinator richness", "Hb normalized degree",  "Hb dominance"),
@@ -46,63 +48,16 @@ ggpairs(
   diag = list(continuous = wrap("densityDiag", alpha = 0.5, fill = "lightblue")),
   upper = list(continuous = wrap("cor", size = 3))
   #diag = list(continuous = wrap(custom_density_diag))
-)
+) 
 
-#####################  FIGURE RANK-ABUNDANCE  ##########
-
-library(ggrepel)
-
-df = readRDS("Data/filtered_interaction_data.rds")
-
-# Frequency table
-pollinator_freq <- df %>%
-  distinct(id, pollinator) %>%
-  count(pollinator, name = "networks_present_in") %>%
-  arrange(desc(networks_present_in)) %>%
-  mutate(rank = row_number())
-
-pollinator_freq <- pollinator_freq %>%
-  mutate(
-    label = str_trim(pollinator),                         # remove leading/trailing spaces
-    label = str_split(label, "\\s+"),                     # split into words
-    label = sapply(label, function(words) {
-      paste0(substr(words, 1, 3), collapse = " ")         # take first 3 letters of each word
-    })
+custom_theme <- theme_bw(base_size = 11) +
+  theme(
+    panel.grid = element_blank(),
+    strip.background = element_rect(fill = "white"),
+    strip.text = element_text(face = "bold")
   )
 
-# Add labels only for top 20
-pollinator_freq <- pollinator_freq %>%
-  mutate(label = ifelse(rank <= 50, label, NA))
-
-# Plot
-ggplot(pollinator_freq, aes(x = rank, y = log(networks_present_in))) +
-  geom_point(col="grey55") +
-  geom_text_repel(
-    aes(label = label),
-    size = 3,
-    max.overlaps = Inf,         # Allow all labels to be shown
-    box.padding = 0.5,          # Space around labels
-    point.padding = 0.5,        # Space between label and point
-    nudge_x = 50,             # Push labels upward
-    segment.size = 0.2,         # Line thickness from point to label
-    segment.size = 0.2,
-    force_pull = 2,
-    segment.color = "grey80",     # light grey color
-    segment.alpha = 0.5           # Line transparency
-  ) +
-  scale_y_continuous(
-    name = "Species count in the networks",
-    breaks = log(c(1, 2, 10, 100, 500, 1500)),  # choose meaningful original values
-    labels = c(1, 2, 10, 100, 500, 1500)        # show original scale on axis
-  ) +
-  labs(
-    x = "Pollinator species rank",
-    y = "Log(Frequency in networks)",
-    title = ""
-  ) +
-  theme_minimal()
-
-
-
+p +
+  theme_set(custom_theme)
 
 
