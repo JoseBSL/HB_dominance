@@ -11,6 +11,15 @@ library(scatterpie)
 #-----------------------------
 # 1. One coordinate per Study_id (in 3035)
 #-----------------------------
+#Load filtered data
+df = readRDS("Data/filtered_interaction_data.rds")
+#Extract study id's
+id = df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>% 
+  distinct(Study_id) %>% 
+  pull()
+#Load raw data
+lanuza = readRDS("Data/raw_interaction_data.rds")
 
 coordinates_sf <- lanuza %>%
   filter(Study_id %in% id) %>%
@@ -45,6 +54,7 @@ coordinates_sf <- lanuza %>%
 
 
 apis_wide <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>% 
   # filter(Study_id %in% id) %>%   # keep if needed
   mutate(
     is_apis = if_else(
@@ -98,7 +108,7 @@ ggplot() +
     size = 0.1
   ) +
   geom_scatterpie(
-    data = pie_data_jit,
+    data = pie_data,
     aes(x = x, y = y),
     cols = c("Apis", "Other"),
     color = NA,
