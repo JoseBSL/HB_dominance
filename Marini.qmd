@@ -1,0 +1,115 @@
+---
+title: "Honeybee dominance reshapes floral resource use of wild pollinators across Europe"
+format:
+  pdf:
+    colorlinks: true            # <-- turn on colored links
+    linkcolor: RoyalBlue        # internal links (TOC, refs)
+    citecolor: RoyalBlue        # in-text citations
+    urlcolor: RoyalBlue         # URLs/DOIs
+    include-in-header:
+      text: |
+        \usepackage[dvipsnames]{xcolor}  % provides RoyalBlue
+        \usepackage{lscape}
+        \newcommand{\blandscape}{\begin{landscape}}
+        \newcommand{\elandscape}{\end{landscape}}
+        \usepackage{caption}
+        \captionsetup[figure]{labelformat=empty}
+        \captionsetup[table]{labelformat=empty}
+        \usepackage{lineno}
+        \linenumbers
+bibliography: references.bib
+link-citations: true            # note: YAML booleans are lowercase
+latex-tinytex: false
+links-as-notes: false
+---
+
+
+\vspace{-2cm}
+
+\begin{center}
+
+ \textbf{Lorenzo Marini\textsuperscript{1}} | \textbf{Jose B. Lanuza\textsuperscript{2}}
+ 
+\end{center}
+
+
+1 DAFNAE, University of Padova, Viale dell’Università 16, Legnaro, Padova, Italy
+
+2 Mediterranean Institute for Advanced Studies (IMEDEA, UIB-CSIC), Mallorca, Balearic Islands, Spain
+
+
+*E-mail:* [lorenzo.marini@unipd.it](mailto:lorenzo.marini@unipd.it), *tel.:* +39 049 827 2807
+
+# ABSTRACT
+
+*Apis mellifera* L. (the western honeybee) is one of the most abundant and frequent pollinator species occurring in plant-pollinator networks worldwide. Its high abundance is often related to the introduction of managed colonies for honey production and crop pollination, raising concerns about potential impacts on wild pollinators due to resource competition and pathogen spill-over. By using a large plant-pollinator interaction dataset, we quantified the resource overlap of wild pollinators with the honeybee and their diet specialisation along a gradient of honeybee dominance across Europe. Honeybee dominance reduced resource use overlap between honeybees and wild pollinators indicating strong floral niche partitioning, yet wild pollinators became more generalist, visiting a greater diversity of floral resources. Using location-scale models, we observed a more inconsistent and unpredictable behaviour across wild pollinators when honeybees were very abundant. Increasing local floral diversity provided foraging opportunities for wild pollinators, but did not mitigate these effects. Our results suggest that avoidance and interference behaviours between managed and wild pollinators are common across Europe, but the importance of these resource use shifts for pollinator population dynamics, community diversity changes, and ecosystem functioning in the long term remains an open question.
+
+# INTRODUCTION
+
+*Apis mellifera* L. (the western honeybee) is one of the most abundant and frequent pollinator species occurring in plant-pollinator networks worldwide across both agricultural and natural landscapes [@hung2018]. Its high abundance is often related to the introduction of managed colonies for honey production and crop pollination [@gazzea2023; @visick2023], raising concerns about potential impacts on wild pollinators due to competition for floral resources [@iwasaki2022; @thomson2020] and pathogens’ spillover [@maurer2024]. Field studies manipulating colony density in the short term have shown that honeybees can often cause competitive displacement through the use of shared resources [@hudewenz2015; @magrach2025; @magrach2017; @pasquali2025; @valido2019], forcing other pollinators to change their visitation patterns to alternative floral resources that are less preferred by the honeybee [@page2023; @pasquali2025; @thomson2016; @thomson2004; @travis2025]. This finding is consistent with the low plant specialisation, opportunistic foraging behaviour, and high population density of this species [@lowe2023]. Manipulative experiments involving the exclusion or supplementation of honeybees are a complex task due to the widespread distribution and long foraging distances. As a result, we still lack a comprehensive synthesis to evaluate how common these processes are across different biogeographical regions, climates, and habitats.
+
+Quantifying resource overlap of wild pollinators with the honeybee and their diet specialisation across ecological networks can provide a complementary approach to detect shifting preferences along a gradient of honeybee dominance [@cappellari2022]. When floral resources are limited and pollinators compete asymmetrically, a low resource overlap and an altered foraging breadth should emerge, indicating potential competitive displacement where a superior competitor forces the inferior competitors to shift their niche and feed on sub-optimal floral resources [@magrach2017; @pasquali2025]. Such displacement can reduce the abundance of the inferior competitor [@lindstrom2016; @thomson2016], or, in the most extreme cases, lead to their local disappearance [@lazaro2021]. In addition, other wild pollinators, such as bumblebees can also displace the honeybee, which, under certain circumstances, can be an inferior competitor [@balfour2015; @wignall2020]. Foraging shifts are expected to increase with honeybee density and floral resource availability in the network [@gomez2022]. Low plant diversity can increase resource overlap between honeybees and other pollinators due to the lack of alternative floral resources, forcing species to forage on the same plants [@bernhardsson2024; @page2024], while functional trait similarity (e.g., body size and tongue length) can also reshape resource use [@cappellari2022]. Insect pollinators are highly diverse, with Hymenoptera, Diptera, Lepidoptera and Coleoptera representing the key flower visiting orders, which differ in life histories, nesting requirements, diet preferences, and floral resource specialisation. Yet most research has focused on the relationship between honeybees and wild bees [@iwasaki2022] with limited understanding of the responses of other key pollinator groups to increased honeybee dominance.  
+
+Using the European plant-pollinator network database [@lanuza2025], this study provides the first continental synthesis of the effect of honeybee dominance on resource overlap and diet specialisation across more than 1800 species of wild pollinators, including wild bees, hoverflies, butterflies and coleopterans. Based on more than 649 independent networks and 1625 sampling events, the role of the honeybee across European plant-pollinator networks was assessed in terms of visitation rate patterns and floral resource use. It was tested whether increasing dominance of the honeybee in the networks broadened foraging breadth of co-occurring wild pollinators and reduced their resource overlap with the honeybee, indicating a potential intensification of competition for floral resources. By using recently-developed scale-location models, we also explored the variability in pollinator response. These relationships were examined across the major biogeographical, climatic, and land-use gradients in Europe. 
+
+# MATERIALS AND METHODS
+
+*Data*
+
+This work uses the recently compiled database of European plant-pollinator networks [EuPPolNet\; @lanuza2025]. The harmonised taxonomy across the different networks allowed for testing resource overlap and diet specialisation at the species level across multiple networks. Weighted networks that met the following criteria were included: i) presence of honeybees, ii) more than one plant species, and iii)more than one pollinator species. The pollinator species were pooled into six non-overlapping taxonomic groups that are expected to interact differently with the honeybee due to distinct behavioural and morphological traits: wild bees (hymenopteran families: Apidae, Halictidae, Andrenidae, Colletidae, Megachilidae, Melittidae), non-bee hymenopterans (all families excluding wild bees), lepidopterans, coleopterans, hoverflies (dipteran family: Syrphidae), and non-syrphid flies (all dipteran families excluding Syrphidae). The final filtered dataset comprised 592 independent networks from 46 studies with a total of 1634 sampling events. 
+
+*Resource overlap and diet specialisation*
+
+For each sampling event per network, we used the observed interactions to compute the Morisita-Horn index [@horn1966] to quantify resource overlap between each focal pollinator species and the honeybee:
+
+
+$$
+\textit{Morisita-Horn} =
+\frac{2 \sum_{k}^{S} p_k h_k}{
+\left( \sum_{k}^{S} \left( \frac{p_k^2}{P^2} \right)
++ \sum_{k}^{S} \left( \frac{h_k^2}{H^2} \right) \right) {PH}
+}
+$$
+
+Here, $p_k$ is the number of interactions of the focal pollinator species with each plant species k and $h_k$ is the number of interactions of the honeybee with each plant $k$. $S$ is the number of plant species, $P$ the total number of interactions of the focal pollinator, and $H$ is the total number of interactions of the honeybee. This symmetric index ranges from 0 (no shared use of resources) to 1 (identical resource use profile). The index normalises the visits by each species' total, using the relative distributions of resource use. Hence, it is not mathematically related to the abundance of focal pollinators or honeybees. The Müller index was not used as it is directional and mathematically related to honeybee dominance, ranging from 0 when honeybees are rare to 1 when they dominate the network, i.e. irrespective of the resource overlap, if honeybees are rare visitors overall, observed Müller index values will tend to 0, while if honeybees numerically dominate the network, Müller index values will inflate toward 1.  
+
+For each pollinator, we also estimated two complementary measures of diet specialisation, normalised degree and PDI [@poisot2012]. Normalised degree is defined as $\frac{k_i}{N_{\text{plant}}}$, where k is the species degree (number of plant species visited by pollinator i) and Nplant is the total number of plant species in the network. As normalised degree is mathematically constrained by the number of plant species in a network, values are not directly comparable among networks with different plant species richness.
+
+The pair difference index (PDI) was computed using its normalised version. For a species with interaction strengths $w_1 \ge w_2 \ge \dots \ge w_k$ across $k$ plants, we set $p_i = \frac{w_i}{\max(w)}$ so that $p_1 = 1$. The index is defined as:
+
+$$
+PDI_{\text{norm}} = \frac{\sum_{i}^{k} (1 - p_i)}{k - 1}
+$$
+The index lies between 0 and 1, with 0 indicates a perfect generalist (all links equal), and 1 a perfect specialist (only one link). The Kullback–Leibler distance [d'\; @bluthgen2006] was not used, as in the absence of independent data on plant abundance, the metric d' is sensitive to the behaviour of the other pollinator species in the network, and the metric becomes mathematically related to the abundance of any dominant species [@poisot2012].
+
+*Null models*
+
+Most node-level metrics computed across networks can be affected by overall network topology. Null models can be effectively used to compare metrics across networks, removing the effect of neutral processes [@bluthgen2024]. For each network and sampling event, we created 500 null models using the Patefield algorithm [@patefield1981]. This null model maintains the total interactions of both pollinator and plant species constant. We used this null model because the total number of interactions per pollinator reflects the local abundance of honeybees and other pollinators in the habitat, while keeping the total number of interactions per plant constant preserves the fact that some plant species are inherently more attractive to pollinators than others. Keeping these constraints, the null model randomly reshuffled the pollinator visits on different plants. For each species, mean and SD from the 500 null models were computed for all metrics and used to compute standardised effect sizes: $SES = \frac{(\text{observed} - \text{mean}_{\text{null}})}{SD_{\text{null}}}$. Due to the generating constraints of the Patefield algorithm, in some networks, SESs could not be computed because SD approximated 0. In further analyses, networks with SD = 0 or IQR = 0 were removed as SES could not be defined. 
+
+
+*Drivers*
+
+In the EuPPollNet database each network contains information on geographical coordinates, sampled habitat, date of the sampling, and biogeographical regions. Summer mean temperature was derived by averaging the monthly averages from May to September for each sampling site (i.e., network) using the Chelsea database [@karger2023]. Since there was a strong collinearity between climate and habitats, the original habitat types were grouped in two broad categories: (i) natural habitats including forest/woodland, riparian vegetation, semi-natural grasslands, moors and heathland, sclerophyllous vegetation, montane to alpine grasslands, beaches, dunes, sands, riparian; and (ii) anthropogenic habitats including intensive grasslands, agricultural land, agricultural margins, green urban areas, and ruderal vegetation. At the network level and for each sampling event, we computed the total number of plant partners, the total number of pollinator species, and the honeybee dominance as the ln-ratio between total honeybee interactions and non-honeybee interactions. The ln-ratio is 0 when honeybee interactions are equal to the sum of the interactions of all other pollinators sampled. We could not use the total abundance of honeybees, since the sampling effort differed between studies. Although the database includes information on floral abundance, inconsistent sampling methodologies limited their use, and only 74% of the studies reported such data.
+
+**Data analysis**
+
+*Resource overlap with the honeybee and foraging breadth of wild pollinators*
+
+The three metrics (i.e., Morisita-Horn index, normalized degree, and PDI) were transformed into standardised effect sizes (SESs) and used as response variables in generalised linear mixed models (GLMMs) with a Gaussian distribution in the glmmTMB package [@mcgillycuddy2025]. For each response, a location-scale model was fitted. Although ecological data often exhibit non-constant variance, this pattern is commonly considered noise that violates the assumptions of statistical models, while heteroscedasticity can often represent meaningful ecological processes [@cleasby2011]. The location component (conditional in glmmTMB) tested the effect of pollinator group, honeybee dominance, number of plant partners, temperature, habitat type on the SES mean of each metric. A quadratic term for dominance was also tested, and the term was removed when linearity could not be rejected (P > 0.05). Two interactions were also tested: honeybee dominance with pollinator taxonomic groups and honeybee dominance with floral richness. The first tested whether the six pollinator taxonomic groups responded differently to the honeybees, while the second tested whether the availability of floral partners modified the honeybee dominance effect on wild pollinators. Sampling date nested in network ID, nested in Study ID, was used as a random structure. Second, a scale component (dispformula in glmmTMB) was used to test whether the number of floral partners and honeybee dominance affected the variance of the SES residuals. The same random structure was included in the scale component, but it was fitted independently from the conditional, as correlated random effects are not implemented in glmmTMB. Models with and without the scale component were compared with the likelihood ratio test using AIC. In all models, LRTs always supported the inclusion of the two predictors and the random structure in the scale component. We tested for potential collinearity between predictors using a global model with no interactions using the check_collinearity() function in the performance package [@ludecke2021]. All predictors included in the modelling exhibited low VIFs  (< 1.5). Continuous predictors were scaled using the scale() function. Model diagnostics were performed using the DHARMa package [@hartig2016]. All models performed well except for Morisita-Horn, which presented a slight deviation (Supplementary Information). All analyses were run using R version 4.5.1. 
+
+*Sensitivity analysis*
+
+As resource overlap and diet specialisation metrics could be influenced by species degree and abundance, a sensitivity analysis was conducted, where focal pollinator species were removed based on their total number of individuals per network and sampling event. Main text analyses included only pollinator species with at least five individuals and a minimum of five honeybees per network. In the Supplementary Information, we presented the same models with different thresholds of minimum number of individuals per network per sampling event (min = 2, 3, 5, and 10). Results were qualitatively similar and showed strong consistency in the observed patterns.
+
+# RESULTS
+
+*General results*
+
+Honeybees visited approximately 50% of all the plant species in the dataset, ranging from networks in which they were present sporadically and at low density (x % of visits) to networks where it was consistently the main visitor (x% of visits). Hence, the remaining 50% of plant species were visited by other pollinators but not by the honeybee. Only x% of plants were visited exclusively by the honeybee. As expected, there was a positive linear association between floral richness and pollinator richness across networks (Fig. 1). Both floral and pollinator species richness exhibited a weak correlation with honeybee normalised degree, with a trend for higher normalised degree at low species richness values. In the sampled networks, honeybee dominance was weakly negatively correlated with floral and pollinator richness and positively with honeybee normalised degree.
+
+# REFERENCES
+
+::: {#refs}
+:::
+
+
