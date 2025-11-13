@@ -27,11 +27,11 @@ apis_network_metrics = readRDS("Data/apis_network_metrics.rds")
 apis_summary2_no1 = apis_network_metrics%>%
   filter(Apis_interactions>1)
 
-vars <- c("plant_n","pollinator_n","Apis_ndegree", "Dominance")
-df_subset <- apis_summary2_no1[, vars, drop = FALSE]
+vars = c("plant_n","pollinator_n","Apis_ndegree", "Dominance")
+df_subset = apis_summary2_no1[, vars, drop = FALSE]
 
 # Custom lower panel: GAM + linear
-lower_gam_lm <- function(data, mapping, ...) {
+lower_gam_lm = function(data, mapping, ...) {
   ggplot(data = data, mapping = mapping) +
     geom_point(shape = 16, color = "lightblue", size = 0.8, alpha = 0.9) +  # shape=16 removes border
     geom_smooth(method = "lm", se = FALSE, color = "orange", linetype = "dashed", ...) +
@@ -50,7 +50,7 @@ p = ggpairs(
   #diag = list(continuous = wrap(custom_density_diag))
 ) 
 
-custom_theme <- theme_bw(base_size = 11) +
+custom_theme = theme_bw(base_size = 11) +
   theme(
     panel.grid = element_blank(),
     strip.background = element_rect(fill = "white"),

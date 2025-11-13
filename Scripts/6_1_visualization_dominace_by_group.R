@@ -52,7 +52,7 @@ pdi = plot(gp_pdi) +
   ggtitle("")+
   theme_classic()
 
-gp_nd <- ggpredict(fit_SES_nd, terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_nd = ggpredict(fit_SES_nd, terms = c("Dominance[all]", "Group"), type = "fixed")
 
 # plot with custom order
 nd = plot(gp_nd) +
