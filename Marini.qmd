@@ -105,11 +105,189 @@ As resource overlap and diet specialisation metrics could be influenced by speci
 
 *General results*
 
-Honeybees visited approximately 50% of all the plant species in the dataset, ranging from networks in which they were present sporadically and at low density (x % of visits) to networks where it was consistently the main visitor (x% of visits). Hence, the remaining 50% of plant species were visited by other pollinators but not by the honeybee. Only x% of plants were visited exclusively by the honeybee. As expected, there was a positive linear association between floral richness and pollinator richness across networks (Fig. 1). Both floral and pollinator species richness exhibited a weak correlation with honeybee normalised degree, with a trend for higher normalised degree at low species richness values. In the sampled networks, honeybee dominance was weakly negatively correlated with floral and pollinator richness and positively with honeybee normalised degree.
+Honeybees visited approximately 50% of all plant species in the dataset and contributed on average 36% of the interactions per network (**Fig. S1**), ranging from networks where they were present only sporadically and at low density (under 1% of visits) to networks where they were consistently the main visitor (up to 98% of visits). Hence, the remaining 50% of plant species were visited by other pollinators but not by the honeybee. Only 3.5% of plants were visited exclusively by the honeybee. As expected, there was a positive linear association between floral richness and pollinator richness across networks (**Fig. 1**). Both floral and pollinator species richness exhibited a weak correlation with honeybee normalised degree, with a trend for higher normalised degree at low species richness values. In the sampled networks, honeybee dominance was weakly negatively correlated with floral and pollinator richness and positively with honeybee normalised degree.
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="85%", fig.height = 5.5, fig.width = 5.5,  fig.cap= "\\textbf{Figure 1}. Scatterplots showing the relationships between the two components of network size (i.e., plant and pollinator species richness) and honeybee normalized degree and dominance (log ratio of honeybee interactions over total interactions). The dashed orange line represents the linear regression, and the solid black line represents the GAM fitted with cubic regression splines. Each point corresponds to an independent sampling event within a network. Only networks with at least five honeybee individuals were included. Diagonal panels represent variable density distributions, while upper panels indicate Pearson correlation coefficients between metrics."}
+
+library(GGally)
+library(ggplot2)
+library(dplyr)
+
+#### Load data ####
+apis_network_metrics = readRDS("Data/apis_network_metrics.rds")
+
+
+######## FIG. 1 COVARIATION BETWEEN DOMINANCE, ND, N POLL AND N PLANT ####
+
+apis_summary2_no1 = apis_network_metrics%>%
+  filter(Apis_interactions>1)
+
+vars = c("plant_n","pollinator_n","Apis_ndegree", "Dominance")
+df_subset = apis_summary2_no1[, vars, drop = FALSE]
+
+theme_set(
+  theme_bw(base_size = 9) +
+    theme(
+      panel.grid.minor = element_blank(),
+      # panel.grid.major = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+      strip.text = element_text(face = "bold", margin = margin(t = 4, r = 4, b = 4, l = 4)),
+      strip.background = element_rect(
+        fill = "gray80",
+        color = "white",
+        linewidth = 0.9,
+        size=1),
+      
+      panel.spacing = unit(0.6, "lines")))
+# Custom lower panel: GAM + linear
+lower_gam_lm = function(data, mapping, ...) {
+  ggplot(data = data, mapping = mapping) +
+    geom_point(shape = 16, color = "lightblue", size = 0.8, alpha = 0.9) +  # shape=16 removes border
+    geom_smooth(method = "lm", se = FALSE, color = "sandybrown", linetype = "dashed", ...) +
+    geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), se = FALSE, color = "black", ...) +
+    scale_x_continuous(n.breaks = 4) +   # limit x-axis ticks
+    scale_y_continuous(n.breaks = 4) 
+
+}
+
+p = ggpairs(
+  df_subset,
+  columns = c("plant_n","pollinator_n","Apis_ndegree",  "Dominance"),
+  columnLabels = c("Plant richness", "Pollinator richness", "Hb normalized degree",  "Hb dominance"),
+  lower = list(continuous = wrap(lower_gam_lm)),
+  diag = list(continuous = wrap("densityDiag", alpha = 0.5, fill = "lightblue")),
+  upper = list(continuous = wrap("cor", size = 2.5))
+  #diag = list(continuous = wrap(custom_density_diag))
+) 
+
+p 
+```
+
+*Resource overlap*
+
+The standardized effect sizes of Morisita-Horn were mainly negative, indicating that in most cases, wild pollinators co-occurring with the honeybee exhibited a lower resource overlap than expected from the null models. The location component on the mean SES supported an interaction between pollinator group and honey bee dominance (**Table S1a**), with a steeper slope for coleopterans and syrphids compared to other groups (**Fig. 2a**). The interaction between the number of plants and dominance was not strongly supported, while the number of plants available in the network reduced resource overlap. No effect of temperature or habitat was found. The scale component indicated an increase in the SES residual variance with dominance and a decrease with floral richness (**Table S1b**), meaning that pollinator resource overlap became more variable at high dominance and low floral richness.
+
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure 2}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap with the honeybee (Morisita-Horn index), B) Paired difference index (PDI) and C) normalised degree of wild pollinators across different groups of flower-visiting insects. Lines represent predicted values from location-scale glmm. The analysis included networks with at least 5 honeybee individuals and wild pollinator species with at least 5 individuals per sampling event."}
+
+library(ggeffects)
+library(ggplot2)
+library(patchwork)
+library(glmmTMB)
+
+# Load models
+fit_SES_pdi <- readRDS("Data/fit_SES_pdi.rds")
+fit_SES_nd  <- readRDS("Data/fit_SES_nd.rds")
+fit_SES_mh  <- readRDS("Data/fit_SES_mh.rds")
+
+# A reusable base theme you want everywhere
+base_theme <- theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    # panel.grid.major = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1)
+  )
+
+# Marginal effects
+gp_mh  <- ggpredict(fit_SES_mh,  terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_pdi <- ggpredict(fit_SES_pdi, terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_nd  <- ggpredict(fit_SES_nd,  terms = c("Dominance[all]", "Group"), type = "fixed")
+
+# Build plots (no theme_set; add the theme to the plots)
+mh <- plot(gp_mh) +
+  labs(x = "", y = "SES Morisita-Horn", color = "Group") +
+  ggtitle("")
+
+pdi <- plot(gp_pdi) +
+  labs(x = "Honeybee dominance (ln-ratio)", y = "SES PDI", color = "Group") +
+  ggtitle("")
+
+nd <- plot(gp_nd) +
+  labs(x = "", y = "SES normalised degree", color = "Group") +
+  ggtitle("")
+
+# Combine and apply theme to *all* subplots with patchwork's &
+p <- (mh | pdi | nd) +
+  plot_layout(ncol = 3, nrow = 1, guides = "collect") &
+  base_theme &                                    # <-- apply your theme to all panels
+  theme(legend.position = "right",
+        base_size = 7.5,
+        panel.spacing = unit(0.1, "lines"),
+        plot.margin = unit(c(0, 0, 0, 0), "pt"),
+        plot.tag = element_text(face = "bold", vjust = 0.35))
+
+p + plot_annotation(tag_levels = "A", tag_suffix = ")")
+
+```
 
 # REFERENCES
 
 ::: {#refs}
 :::
 
+# SUPPLEMENTARY INFORMATION
 
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="80%", fig.cap= "\\textbf{Figure S1}. Histogram showing the mean proportion of interactions of honeybees per network. The average value across all networks is indicated with a vertical dashed red bar."}
+
+
+library(dplyr)
+library(ggplot2)
+filtered_interaction_data = readRDS("Data/filtered_interaction_data_all_cols.rds")
+
+
+hb_percent = filtered_interaction_data %>% 
+  mutate(Study_network_id = paste0(Study_id, Network_id)) %>% 
+  mutate(group = if_else(grepl("Apis", pollinator, ignore.case = TRUE), "Honeybee", "Other")) %>% 
+  group_by(Study_network_id, group) %>% 
+  summarise(
+    n_interactions = sum(interaction, na.rm = TRUE),   # sum of interactions per group
+    .groups = "drop") %>%
+  tidyr::pivot_wider(
+    names_from = group,
+    values_from = n_interactions,
+    values_fill = 0) %>%
+  mutate(
+    total = Honeybee + Other,
+    perc_honeybee = 100 * Honeybee / total)
+
+#Percentage of plants visited by the HB
+# Calculate the mean
+mean_hb <- mean(hb_percent$perc_honeybee, na.rm = TRUE)
+
+theme_set(
+  theme_bw(base_size = 9) +
+    theme(
+      panel.grid.minor = element_blank(),
+      # panel.grid.major = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+      panel.spacing = unit(0.6, "lines")))
+
+# Plot histogram + mean line
+ggplot(hb_percent, aes(x = perc_honeybee)) +
+  geom_histogram(
+    bins = 30,                     # adjust bin number if needed
+    fill = "skyblue", 
+    color = "white"
+  ) +
+  geom_vline(
+    xintercept = mean_hb,
+    color = "red",
+    linetype = "dashed",
+    linewidth = 1
+  ) +
+  annotate(
+    "text",
+    x = mean_hb,
+    y = 1,
+    label = paste0("Mean = ", round(mean_hb, 1), "%"),
+    vjust = -0.5,
+    hjust = -0.1,
+    color = "black",
+    size = 4
+  ) +
+  labs(
+    x = "Percentage of honeybee interactions per network",
+    y = "Number of networks") 
+
+```
