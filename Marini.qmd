@@ -227,6 +227,70 @@ p + plot_annotation(tag_levels = "A", tag_suffix = ")")
 
 # SUPPLEMENTARY INFORMATION
 
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the MH table (Conditional + Dispersion)
+df_mh <- dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_mh, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_mh, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_mh <- df_mh %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_mh, is.numeric)
+df_mh[num_cols] <- lapply(df_mh[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_mh$Component == "Conditional")
+idx_disp <- which(df_mh$Component == "Dispersion")
+
+df_mh = df_mh %>% select(!Component)
+
+# Render table
+kbl(
+  df_mh,
+  caption = "\\textbf{Table 1.}",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+   column_spec(1, width = "16em") %>%       # Term column
+  column_spec(2:ncol(df_mh), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  pack_rows("Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("Dispersion (variance)", min(idx_disp), max(idx_disp))
+```
+
+
 
 ```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="80%", fig.cap= "\\textbf{Figure S1}. Histogram showing the mean proportion of interactions of honeybees per network. The average value across all networks is indicated with a vertical dashed red bar."}
 
