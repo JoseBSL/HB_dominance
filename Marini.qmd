@@ -167,6 +167,12 @@ p
 
 The standardized effect sizes of Morisita-Horn were mainly negative, indicating that in most cases, wild pollinators co-occurring with the honeybee exhibited a lower resource overlap than expected from the null models. The location component on the mean SES supported an interaction between pollinator group and honey bee dominance (**Table S1a**), with a steeper slope for coleopterans and syrphids compared to other groups (**Fig. 2a**). The interaction between the number of plants and dominance was not strongly supported, while the number of plants available in the network reduced resource overlap. No effect of temperature or habitat was found. The scale component indicated an increase in the SES residual variance with dominance and a decrease with floral richness (**Table S1b**), meaning that pollinator resource overlap became more variable at high dominance and low floral richness.
 
+*Diet specialization*
+
+The SESs for the paired difference index (PDI) were mostly positive or around 0, indicating that pollinator specialization tended to be relatively higher than or similar to the expected values from the null models. The location-scale component indicated that mean PDI declined non-linearly with increasing honeybee dominance for all groups, except for the coleopterans which showed an opposite pattern (**Fig. 2B**). Coleopterans and lepidopterans were those with higher specialisation. A weaker interaction was found between dominance and floral richness on mean PDI, with a slightly steeper negative slope in networks with a higher number of flowering species.  Networks sampled in warmer regions presented higher pollinator specialisation (**Table S2a**). The dispersion component indicated a negative effect of floral richness on the PDI residual variability, while dominance did not have an effect (**Table S2b**). 
+
+The SESs of normalised degree were mainly negative or around 0, indicating that the pollinator use of the available plants tended to be relatively lower than or similar to the expected values from the null models. Consistent with PDI, an interaction between taxonomic group and dominance was found (**Table S3a**), with normalised degree increasing with honeybee dominance in all groups except for coleopterans, which exhibited an opposite pattern (**Fig. 2C**). An interaction between floral richness and dominance was also found, where mean normalised degree declined with increasing floral richness but only at low dominance values. The dispersion component indicated an increase in the SES residual variance of normalised degree with dominance and a decrease with floral richness (**Table S3b**).
+
 
 ```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure 2}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap with the honeybee (Morisita-Horn index), B) Paired difference index (PDI) and C) normalised degree of wild pollinators across different groups of flower-visiting insects. Lines represent predicted values from location-scale glmm. The analysis included networks with at least 5 honeybee individuals and wild pollinator species with at least 5 individuals per sampling event."}
 
@@ -225,9 +231,9 @@ p + plot_annotation(tag_levels = "A", tag_suffix = ")")
 ::: {#refs}
 :::
 
-# SUPPLEMENTARY INFORMATION
-
 \newpage
+
+# SUPPLEMENTARY INFORMATION
 
 ```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
 
@@ -279,18 +285,149 @@ df_mh = df_mh %>% select(!Component)
 # Render table
 kbl(
   df_mh,
-  caption = "\\textbf{Table 1.}",
+  caption = "\\textbf{Table S1}. Scale-location model testing multiple predictors on the standardized effect size of pairwise resource overlap (Morisita–Horn) between the honeybee and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
   booktabs = TRUE,
   escape = TRUE
 ) %>%
-   column_spec(1, width = "16em") %>%       # Term column
+   column_spec(1, width = "18em") %>%       # Term column
   column_spec(2:ncol(df_mh), width = "4em") %>%  # numeric columns
   kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
-  pack_rows("Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
-  pack_rows("Dispersion (variance)", min(idx_disp), max(idx_disp))
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
 ```
 
+\newpage
 
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the PDI table (Conditional + Dispersion)
+df_pdi = dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_pdi, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_pdi, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_pdi = df_pdi %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_pdi, is.numeric)
+df_pdi[num_cols] <- lapply(df_pdi[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_pdi$Component == "Conditional")
+idx_disp <- which(df_pdi$Component == "Dispersion")
+
+df_pdi = df_pdi %>% select(!Component)
+
+# Render table
+kbl(
+  df_pdi,
+  caption = "\\textbf{Table S2}. Scale-location model testing multiple predictors on the standardized effect size of paired difference index (PDI) between the honeybee and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+  column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_pdi), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+
+```
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the ND table (Conditional + Dispersion)
+df_nd = dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_nd, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_nd, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_nd = df_nd %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_nd, is.numeric)
+df_nd[num_cols] <- lapply(df_nd[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_nd$Component == "Conditional")
+idx_disp <- which(df_nd$Component == "Dispersion")
+
+df_nd = df_nd %>% select(!Component)
+
+# Render table
+kbl(
+  df_nd,
+  caption = "\\textbf{Table S3}. Scale-location model testing multiple predictors on the standardized effect size of normalised degree between the honeybee and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+  column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_nd), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+
+```
+
+\newpage
 
 ```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="80%", fig.cap= "\\textbf{Figure S1}. Histogram showing the mean proportion of interactions of honeybees per network. The average value across all networks is indicated with a vertical dashed red bar."}
 
