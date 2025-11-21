@@ -105,7 +105,7 @@ As resource overlap and diet specialisation metrics could be influenced by speci
 
 *General results*
 
-Honeybees visited approximately 50% of all plant species in the dataset and contributed on average 36% of the interactions per network (**Fig. S1**), ranging from networks where they were present only sporadically and at low density (under 1% of visits) to networks where they were consistently the main visitor (up to 98% of visits). Hence, the remaining 50% of plant species were visited by other pollinators but not by the honeybee. Only 3.5% of plants were visited exclusively by the honeybee. As expected, there was a positive linear association between floral richness and pollinator richness across networks (**Fig. 1**). Both floral and pollinator species richness exhibited a weak correlation with honeybee normalised degree, with a trend for higher normalised degree at low species richness values. In the sampled networks, honeybee dominance was weakly negatively correlated with floral and pollinator richness and positively with honeybee normalised degree.
+Honeybees visited approximately 50% of all plant species in the dataset and contributed on average 36% of the interactions per network (**Fig. S1-S2**), ranging from networks where they were present only sporadically and at low density (under 1% of visits) to networks where they were consistently the main visitor (up to 98% of visits). Hence, the remaining 50% of plant species were visited by other pollinators but not by the honeybee. Only 3.5% of plants were visited exclusively by the honeybee. As expected, there was a positive linear association between floral richness and pollinator richness across networks (**Fig. 1**). Both floral and pollinator species richness exhibited a weak correlation with honeybee normalised degree, with a trend for higher normalised degree at low species richness values. In the sampled networks, honeybee dominance was weakly negatively correlated with floral and pollinator richness and positively with honeybee normalised degree.
 
 ```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="85%", fig.height = 5.5, fig.width = 5.5,  fig.cap= "\\textbf{Figure 1}. Scatterplots showing the relationships between the two components of network size (i.e., plant and pollinator species richness) and honeybee normalized degree and dominance (log ratio of honeybee interactions over total interactions). The dashed orange line represents the linear regression, and the solid black line represents the GAM fitted with cubic regression splines. Each point corresponds to an independent sampling event within a network. Only networks with at least five honeybee individuals were included. Diagonal panels represent variable density distributions, while upper panels indicate Pearson correlation coefficients between metrics."}
 
@@ -505,5 +505,239 @@ ggplot(hb_percent, aes(x = perc_honeybee)) +
   labs(
     x = "Percentage of honeybee interactions per network",
     y = "Number of networks") 
+
+```
+
+\newpage
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="80%", fig.cap= "\\textbf{Figure S2}. Approximate locations of the studies, showing the proportion of \\textit{Apis} interactions weighted by the total number of pollinator species per study."}
+
+library(dplyr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(giscoR)
+
+#--------------------------------------------------
+# 0. Load data
+#--------------------------------------------------
+
+df     <- readRDS("Data/filtered_interaction_data.rds")
+lanuza <- readRDS("Data/raw_interaction_data.rds")
+
+#--------------------------------------------------
+# 1. Get Study IDs and coordinates
+#--------------------------------------------------
+
+id <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>%
+  distinct(Study_id) %>%
+  pull()
+
+coordinates_sf <- lanuza %>%
+  filter(Study_id %in% id) %>%
+  select(Study_id, Latitude, Longitude) %>%
+  distinct() %>%
+  group_by(Study_id) %>%
+  slice(1) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>%
+  st_transform(3035)
+
+#--------------------------------------------------
+# 2. Pollinator richness (number of pollinators per study)
+#--------------------------------------------------
+
+pollinator_richness <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>%
+  group_by(Study_id) %>%
+  summarise(
+    n_pollinators = n_distinct(pollinator),
+    .groups = "drop"
+  )
+
+#--------------------------------------------------
+# 3. Study-level Apis vs Other interactions
+#--------------------------------------------------
+
+apis_wide <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>%
+  mutate(
+    is_apis = if_else(
+      grepl("Apis", pollinator, ignore.case = TRUE),
+      "Apis",
+      "Other"
+    )
+  ) %>%
+  group_by(Study_id, is_apis) %>%
+  summarise(
+    n_interactions = sum(interaction, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from  = is_apis,
+    values_from = n_interactions,
+    values_fill = 0
+  )
+
+#--------------------------------------------------
+# 4. Combine coordinates, interactions, and richness
+#--------------------------------------------------
+
+pie_data <- coordinates_sf %>%
+  left_join(apis_wide, by = "Study_id") %>%
+  left_join(pollinator_richness, by = "Study_id") %>%
+  mutate(
+    x = st_coordinates(geometry)[, 1],
+    y = st_coordinates(geometry)[, 2],
+    total_inter     = Apis + Other,
+    prop_apis_study = if_else(total_inter > 0, Apis / total_inter, NA_real_)
+  ) %>%
+  st_drop_geometry()
+
+# Convert back to sf for spatial operations
+pie_sf <- st_as_sf(
+  pie_data,
+  coords = c("x", "y"),
+  crs    = 3035,
+  remove = FALSE
+)
+
+#--------------------------------------------------
+# 5. Countries layer (for reference only)
+#--------------------------------------------------
+
+cntries <- gisco_get_countries(region = "Europe", year = "2016") %>%
+  st_transform(3035)
+
+#--------------------------------------------------
+# 6. Build FULL rectangular grid over Europe extent
+#    (NOT clipped by borders)
+#--------------------------------------------------
+
+bbox_grid <- st_bbox(c(
+  xmin = 2200000,
+  xmax = 7150000,
+  ymin = 1380000,
+  ymax = 5500000
+), crs = st_crs(3035))
+
+grid_poly <- st_make_grid(
+  st_as_sfc(bbox_grid),
+  cellsize = 100000,   # 100 km grid
+  square   = TRUE
+)
+
+grid_sf <- st_sf(
+  grid_id  = seq_along(grid_poly),
+  geometry = grid_poly
+)
+
+#--------------------------------------------------
+# 7. Assign studies to grid cells & aggregate
+#    (weight by number of pollinators per study)
+#--------------------------------------------------
+
+# Join each point to the grid cell it falls in
+join <- st_join(pie_sf, grid_sf, join = st_within)
+
+# Weighted aggregation per grid cell
+grid_agg <- join %>%
+  st_drop_geometry() %>%
+  group_by(grid_id) %>%
+  summarise(
+    prop_apis = if (all(is.na(prop_apis_study)) || all(is.na(n_pollinators))) {
+      NA_real_
+    } else {
+      weighted.mean(prop_apis_study, w = n_pollinators, na.rm = TRUE)
+    },
+    n_studies    = n(),
+    total_weight = sum(n_pollinators, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Attach aggregated values back to all grid cells
+grid_full <- grid_sf %>%
+  left_join(grid_agg, by = "grid_id") %>%
+  mutate(
+    prop_apis_perc = prop_apis * 100   # convert to percentage for plotting
+  )
+
+#--------------------------------------------------
+# 8. Get centroids for symbol plotting
+#--------------------------------------------------
+
+grid_centroids <- st_centroid(grid_full)
+
+grid_centroids_df <- grid_centroids %>%
+  mutate(
+    cx = st_coordinates(geometry)[, 1],
+    cy = st_coordinates(geometry)[, 2]
+  ) %>%
+  st_drop_geometry()
+
+#--------------------------------------------------
+# 9. Plot: background grid + size-varying squares
+#--------------------------------------------------
+
+ggplot() +
+  # Country polygons as reference
+  geom_sf(
+    data  = cntries,
+    fill  = "grey85",
+    color = "black",
+    size  = 0.1
+  ) +
+  # Light background grid (all same size, low alpha)
+  geom_sf(
+    data  = grid_full,
+    fill  = NA,
+    color = "grey90",
+    size  = 0.1
+  ) +
+  # Squares at centroids: size = total pollinator richness per cell,
+  # fill = weighted proportion of Apis interactions
+  geom_point(
+    data = grid_centroids_df,
+    aes(
+      x    = cx,
+      y    = cy,
+      size = total_weight,
+      fill = prop_apis_perc
+    ),
+    shape  = 22,  # filled square
+    color  = "black",
+    stroke = 0.1
+  ) +
+  coord_sf(
+    xlim   = c(2200000, 7150000),
+    ylim   = c(1380000, 5500000),
+    expand = FALSE
+  ) +
+  scale_fill_viridis_c(
+    option   = "C",
+    na.value = NA,
+    name     = "Proportion of\nApis interactions (%)"
+  ) +
+  scale_size_continuous(
+    name = "Total pollinator\nrichness",
+    range = c(1, 7)  # tweak as needed
+  ) +
+  guides(
+    fill = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.background = element_rect(fill = NA),
+    panel.border     = element_rect(colour = "black", fill = NA, size = 1),
+    legend.position  = "right",
+    legend.title=element_text(size=10),
+      legend.key.size = unit(0.5, "lines") 
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+
 
 ```
