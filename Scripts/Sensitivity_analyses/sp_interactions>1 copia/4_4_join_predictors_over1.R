@@ -9,7 +9,7 @@
 #   - Data/ecological_predictors.rds  (contains: degree_interactions, species_data,
 #                                      plants_per_network, habitat_net)
 #
-# Output: Data/df_mod.rds
+# Output: Data/modelling_data_int_over_one.rds
 #
 # Author: L. Marini
 # Reviewer: J.B. Lanuza
@@ -37,7 +37,7 @@ merged_data = pollinator_metrics_ses %>%
   left_join(degree_interactions, by = c("id", "pollinator")) %>%
   left_join(species_data, by = "pollinator") %>%
   left_join(plants_per_network, by = "id") %>%
-  left_join(temperature_summary,by = "id") %>%
+  left_join(temperature,by = "id") %>%
   left_join(habitat_net, by = "id") %>%
   left_join(apis_network_metrics,  by = "id")
 str(merged_data) ############ dataframe entering the modeling
@@ -46,7 +46,7 @@ str(merged_data) ############ dataframe entering the modeling
 names(merged_data)
 modelling_data = subset(merged_data,
                  Pollinator_yes!="no"   &   
-                   sp_interactions >4     &
+                   sp_interactions >1     &
                    Apis_interactions>4    &
                    Pollinator_genus!="NA" &
                    sp_degree>0            &
@@ -67,5 +67,5 @@ modelling_data = modelling_data %>%
   separate(id, into = c("study_id", "network_id", "date"), sep = "//")
 
 #### Save data ####
-saveRDS(modelling_data, "Data/modelling_data.rds")
+saveRDS(modelling_data, "Data/modelling_data_int_over_one.rds")
 

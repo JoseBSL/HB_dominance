@@ -1,57 +1,22 @@
 ############################################################ #
-# Script name: "6_3_visualization_dominance_by_plant.R"
-# Objective: 
+# Script name: "6_4_visualization_rank_abundance.R"
+# Objective: Visualize rank-abundance distribution of pollinator species
+#            Only names of top 50 are shown
+# Inputs: Data/filtered_interaction_data.rds
 #
-# Inputs:
-#   - Data/fit_SES_nd.rds
-#   - Data/fit_SES_mh.rds
-#   - Data/fit_SES_pdi.rds
-#
-# Outputs:
-#   - Combined figure showing Dominance × plant effects
+# Outputs: Rank-abundance plot with top 50 species labeled
 #
 # Author: L. Marini
 # Reviewer: J.B. Lanuza
 # Year: 2025
 ############################################################ #
 #### Load libraries ####
-library(GGally)
+library(ggrepel)
 library(ggplot2)
+library(dplyr)
+library(stringr)
 
 #### Load data ####
-apis_network_metrics = readRDS("Data/apis_network_metrics.rds")
-
-
-######## FIG. 1 COVARIATION BETWEEN DOMINANCE, ND, N POLL AND N PLANT ####
-
-apis_summary2_no1 = apis_network_metrics%>%
-  filter(Apis_interactions>1)
-
-vars <- c("plant_n","pollinator_n","Apis_ndegree", "Dominance")
-df_subset <- apis_summary2_no1[, vars, drop = FALSE]
-
-# Custom lower panel: GAM + linear
-lower_gam_lm <- function(data, mapping, ...) {
-  ggplot(data = data, mapping = mapping) +
-    geom_point(color = "gray40", size = 0.7) +
-    geom_smooth(method = "lm", se = FALSE, color = "blue", linetype = "dashed", ...) +
-    geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), se = FALSE, color = "red", ...)
-}
-
-ggpairs(
-  df_subset,
-  columns = c("plant_n","pollinator_n","Apis_ndegree",  "Dominance"),
-  columnLabels = c("Plant richness", "Pollinator richness", "Hb normalized degree",  "Hb dominance"),
-  lower = list(continuous = wrap(lower_gam_lm)),
-  diag = list(continuous = wrap("densityDiag", alpha = 0.5, fill = "lightblue")),
-  upper = list(continuous = wrap("cor", size = 3))
-  #diag = list(continuous = wrap(custom_density_diag))
-)
-
-#####################  FIGURE RANK-ABUNDANCE  ##########
-
-library(ggrepel)
-
 df = readRDS("Data/filtered_interaction_data.rds")
 
 # Frequency table

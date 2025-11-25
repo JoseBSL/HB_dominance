@@ -3,9 +3,9 @@
 # Objective: Visualize the effect of honeybee dominance on 
 #             SES metrics across different plant species
 # Inputs:
-#   - Data/fit_SES_nd.rds
-#   - Data/fit_SES_mh.rds
-#   - Data/fit_SES_pdi.rds
+#   - Data/fit_SES_nd_over1.rds
+#   - Data/fit_SES_mh_over1.rds
+#   - Data/fit_SES_pdi_over1.rds
 #
 # Outputs:
 #   - Combined figure showing Dominance × plant effects
@@ -19,9 +19,9 @@ library(ggeffects)
 library(ggplot2)
 
 #### Load data ####
-fit_SES_pdi = readRDS("Data/fit_SES_pdi.rds")
-fit_SES_nd  = readRDS("Data/fit_SES_nd.rds")
-fit_SES_mh  = readRDS("Data/fit_SES_mh.rds")
+fit_SES_pdi = readRDS("Data/fit_SES_pdi_over1.rds")
+fit_SES_nd  = readRDS("Data/fit_SES_nd_over1.rds")
+fit_SES_mh  = readRDS("Data/fit_SES_mh_over1.rds")
 
 ################## DOMINANCE X PLANTS
 graphics.off()

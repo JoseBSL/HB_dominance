@@ -3,9 +3,9 @@
 # Objective: 
 #
 # Inputs:
-#   - Data/fit_SES_nd.rds
-#   - Data/fit_SES_mh.rds
-#   - Data/fit_SES_pdi.rds
+#   - Data/fit_SES_nd_over1.rds
+#   - Data/fit_SES_mh_over1.rds
+#   - Data/fit_SES_pdi_over1.rds
 #
 # Outputs:
 #   - Combined figure showing Dominance × plant effects
@@ -17,7 +17,7 @@
 #### Load libraries ####
 library(GGally)
 library(ggplot2)
-
+library(stringr)
 #### Load data ####
 apis_network_metrics = readRDS("Data/apis_network_metrics.rds")
 
