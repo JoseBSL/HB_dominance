@@ -428,12 +428,14 @@ fit_SES_pdi <- readRDS("Data/fit_SES_pdi.rds")
 fit_SES_nd  <- readRDS("Data/fit_SES_nd.rds")
 fit_SES_mh  <- readRDS("Data/fit_SES_mh.rds")
 
-# A reusable base theme you want everywhere
+# Base theme
 base_theme <- theme_bw() +
   theme(
     panel.grid.minor = element_blank(),
-    # panel.grid.major = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 1)
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    legend.key            = element_rect(fill = "white", colour = NA),
+    legend.background     = element_blank(),
+    legend.box.background = element_blank()
   )
 
 # Marginal effects
@@ -441,28 +443,64 @@ gp_mh  <- ggpredict(fit_SES_mh,  terms = c("Dominance[all]", "Group"), type = "f
 gp_pdi <- ggpredict(fit_SES_pdi, terms = c("Dominance[all]", "Group"), type = "fixed")
 gp_nd  <- ggpredict(fit_SES_nd,  terms = c("Dominance[all]", "Group"), type = "fixed")
 
-# Build plots (no theme_set; add the theme to the plots)
+# Plots with different linetypes per group
 mh <- plot(gp_mh) +
-  labs(x = "", y = "SES Morisita-Horn", color = "Group") +
+  aes(linetype = group) +
+  labs(
+    x = "",
+    y = "SES Morisita-Horn",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",  # don't show CI fill as a separate legend
+    colour   = guide_legend(override.aes = list(fill = NA)),   # <-- remove grey box
+    linetype = guide_legend(override.aes = list(fill = NA))    # <-- same for linetype legend
+  ) +
   ggtitle("")
 
 pdi <- plot(gp_pdi) +
-  labs(x = "Honeybee dominance (ln-ratio)", y = "SES PDI", color = "Group") +
+  aes(linetype = group) +
+  labs(
+    x = "Honeybee dominance (ln-ratio)",
+    y = "SES PDI",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",
+    colour   = guide_legend(override.aes = list(fill = NA)),
+    linetype = guide_legend(override.aes = list(fill = NA))
+  ) +
   ggtitle("")
 
 nd <- plot(gp_nd) +
-  labs(x = "", y = "SES normalised degree", color = "Group") +
+  aes(linetype = group) +
+  labs(
+    x = "",
+    y = "SES normalised degree",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",
+    colour   = guide_legend(override.aes = list(fill = NA)),
+    linetype = guide_legend(override.aes = list(fill = NA))
+  ) +
   ggtitle("")
 
-# Combine and apply theme to *all* subplots with patchwork's &
+# Combine and apply theme
 p <- (mh | pdi | nd) +
   plot_layout(ncol = 3, nrow = 1, guides = "collect") &
-  base_theme &                                    # <-- apply your theme to all panels
-  theme(legend.position = "right",
-        base_size = 7.5,
-        panel.spacing = unit(0.1, "lines"),
-        plot.margin = unit(c(0, 0, 0, 0), "pt"),
-        plot.tag = element_text(face = "bold", vjust = 0.35))
+  base_theme &
+  theme(
+    legend.position = "right",
+    base_size = 7.5,
+    panel.spacing = unit(0.1, "lines"),
+    plot.margin = unit(c(0, 0, 0, 0), "pt"),
+    plot.tag = element_text(face = "bold", vjust = 0.35),
+    legend.key.width = unit(1.4, "cm")
+  )
 
 p + plot_annotation(tag_levels = "A", tag_suffix = ")")
 
@@ -692,6 +730,415 @@ kbl(
 
 \newpage
 
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+#overwrite data with sensitivity analysis
+fit_SES_mh  = readRDS("Data/fit_SES_mh_over1.rds")
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the MH table (Conditional + Dispersion)
+df_mh <- dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_mh, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_mh, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_mh <- df_mh %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_mh, is.numeric)
+df_mh[num_cols] <- lapply(df_mh[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_mh$Component == "Conditional")
+idx_disp <- which(df_mh$Component == "Dispersion")
+
+df_mh = df_mh %>% select(!Component)
+
+# Render table
+kbl(
+  df_mh,
+  caption = "\\textbf{Table S4}. Scale-location model from the sensitivity analysis applying a minimum interaction threshold of two species. The model tests multiple predictors on the standardized effect size of pairwise resource overlap (Morisita–Horn) between honeybees and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+   column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_mh), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+```
+
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+#overwrite data with sensitivity analysis
+fit_SES_pdi  = readRDS("Data/fit_SES_pdi_over1.rds")
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the PDI table (Conditional + Dispersion)
+df_pdi = dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_pdi, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_pdi, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_pdi = df_pdi %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_pdi, is.numeric)
+df_pdi[num_cols] <- lapply(df_pdi[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_pdi$Component == "Conditional")
+idx_disp <- which(df_pdi$Component == "Dispersion")
+
+df_pdi = df_pdi %>% select(!Component)
+
+# Render table
+kbl(
+  df_pdi,
+  caption = "\\textbf{Table S5}. Scale-location model from the sensitivity analysis applying a minimum interaction threshold of two species. The model tests multiple predictors on the standardized effect size of paired difference index (PDI) between honeybees and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+  column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_pdi), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+
+```
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+#overwrite data with sensitivity analysis
+fit_SES_nd  = readRDS("Data/fit_SES_nd_over1.rds")
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the ND table (Conditional + Dispersion)
+df_nd = dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_nd, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_nd, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_nd = df_nd %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_nd, is.numeric)
+df_nd[num_cols] <- lapply(df_nd[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_nd$Component == "Conditional")
+idx_disp <- which(df_nd$Component == "Dispersion")
+
+df_nd = df_nd %>% select(!Component)
+
+# Render table
+kbl(
+  df_nd,
+  caption = "\\textbf{Table S6}. Scale-location model from the sensitivity analysis applying a minimum interaction threshold of two species. The model tests multiple predictors on the standardized effect size of normalised degree between honeybees and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+  column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_nd), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+
+```
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+#overwrite data with sensitivity analysis
+fit_SES_mh  = readRDS("Data/fit_SES_mh_over9.rds")
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the MH table (Conditional + Dispersion)
+df_mh <- dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_mh, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_mh, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_mh <- df_mh %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_mh, is.numeric)
+df_mh[num_cols] <- lapply(df_mh[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_mh$Component == "Conditional")
+idx_disp <- which(df_mh$Component == "Dispersion")
+
+df_mh = df_mh %>% select(!Component)
+
+# Render table
+kbl(
+  df_mh,
+  caption = "\\textbf{Table S7}. Scale-location model from the sensitivity analysis applying a minimum interaction threshold of nine species. The model tests multiple predictors on the standardized effect size of pairwise resource overlap (Morisita–Horn) between honeybees and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+   column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_mh), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+```
+
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+#overwrite data with sensitivity analysis
+fit_SES_pdi  = readRDS("Data/fit_SES_pdi_over9.rds")
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the PDI table (Conditional + Dispersion)
+df_pdi = dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_pdi, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_pdi, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_pdi = df_pdi %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_pdi, is.numeric)
+df_pdi[num_cols] <- lapply(df_pdi[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_pdi$Component == "Conditional")
+idx_disp <- which(df_pdi$Component == "Dispersion")
+
+df_pdi = df_pdi %>% select(!Component)
+
+# Render table
+kbl(
+  df_pdi,
+  caption = "\\textbf{Table S8}. Scale-location model from the sensitivity analysis applying a minimum interaction threshold of nine species. The model tests multiple predictors on the standardized effect size of paired difference index (PDI) between honeybees and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+  column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_pdi), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+
+```
+
+\newpage
+
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, fig.align='center', fig.height=1, fig.width=10}
+
+#### Load libs ####
+library(glmmTMB)     # make sure this is attached
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+#overwrite data with sensitivity analysis
+fit_SES_nd  = readRDS("Data/fit_SES_nd_over9.rds")
+
+# Helper that never touches the model frame
+tab_df_glmmTMB <- function(fit, component = c("cond","disp"), label = NULL) {
+  component <- match.arg(component)
+  sm <- summary(fit)$coefficients[[component]]
+  stopifnot(!is.null(sm))  # fail clearly if the component doesn't exist
+  tibble::tibble(
+    Term      = rownames(sm),
+    Estimate  = sm[, "Estimate"],
+    SE        = sm[, "Std. Error"],
+    z         = sm[, "z value"],
+    p         = sm[, "Pr(>|z|)"],
+    Component = if (is.null(label)) component else label
+  )
+}
+
+# Build the ND table (Conditional + Dispersion)
+df_nd = dplyr::bind_rows(
+  tab_df_glmmTMB(fit_SES_nd, component = "cond", label = "Conditional"),
+  tab_df_glmmTMB(fit_SES_nd, component = "disp", label = "Dispersion")
+)
+
+# (Optional) clean prefixes if Term contains "Conditional_" or "Dispersion_"
+df_nd = df_nd %>%
+  mutate(
+    Term = gsub("(?i)^(conditional|dispersion)[_ :.-]+", "", Term, perl = TRUE),
+    Component = factor(Component, levels = c("Conditional", "Dispersion"))
+  ) %>%
+  arrange(Component)
+
+# Round numeric columns
+num_cols <- sapply(df_nd, is.numeric)
+df_nd[num_cols] <- lapply(df_nd[num_cols], function(x) round(x, 3))
+
+# Indices for grouping rows in kableExtra
+idx_cond <- which(df_nd$Component == "Conditional")
+idx_disp <- which(df_nd$Component == "Dispersion")
+
+df_nd = df_nd %>% select(!Component)
+
+# Render table
+kbl(
+  df_nd,
+  caption = "\\textbf{Table S9}. Scale-location model from the sensitivity analysis applying a minimum interaction threshold of nine species. The model tests multiple predictors on the standardized effect size of normalised degree between honeybees and wild pollinator species across European networks. The conditional component tested the effects of group, honeybee dominance (linear and quadratic terms), temperature, habitat, plant richness, and the interactions between dominance and group and between dominance and plant richness on mean PDI. The dispersion component tested the effects of dominance and plant richness on the residual variance. Both components included pollinator species as a random intercept. Each observation corresponded to a species with at least five individuals recorded in a sampling event that also contained at least five honeybees.",
+  booktabs = TRUE,
+  escape = TRUE
+) %>%
+  column_spec(1, width = "18em") %>%       # Term column
+  column_spec(2:ncol(df_nd), width = "4em") %>%  # numeric columns
+  kable_classic(full_width = FALSE, html_font = "Source Sans Pro") %>%
+  kable_styling(latex_options = "hold_position") %>%
+  pack_rows("(a) Conditional (mean)", min(idx_cond), max(idx_cond)) %>%
+  pack_rows("(b) Dispersion (variance)", min(idx_disp), max(idx_disp))
+
+```
+
+
+\newpage
+
 ```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="80%", fig.cap= "\\textbf{Figure S1}. Histogram showing the mean proportion of interactions of honeybees per network. The average value across all networks is indicated with a vertical dashed red bar."}
 
 
@@ -754,5 +1201,191 @@ ggplot(hb_percent, aes(x = perc_honeybee)) +
     x = "Percentage of honeybee interactions per network",
     y = "Number of networks") 
 
+```
+
+\newpage
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure S2}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap (Morisita-Horn), B) PDI, and C) normalised degree, shown for the sensitivity analysis applying a two-species minimum interaction threshold. Lines represent predicted values from the location-scale GLMM. The analysis included networks with at least five honeybee individuals and wild pollinator species with at least five individuals per sampling event."}
+
+library(ggeffects)
+library(ggplot2)
+library(patchwork)
+library(glmmTMB)
+
+# Load models
+fit_SES_pdi <- readRDS("Data/fit_SES_pdi_over1.rds")
+fit_SES_nd  <- readRDS("Data/fit_SES_nd_over1.rds")
+fit_SES_mh  <- readRDS("Data/fit_SES_mh_over1.rds")
+
+# Base theme
+base_theme <- theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    legend.key            = element_rect(fill = "white", colour = NA),
+    legend.background     = element_blank(),
+    legend.box.background = element_blank()
+  )
+
+# Marginal effects
+gp_mh  <- ggpredict(fit_SES_mh,  terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_pdi <- ggpredict(fit_SES_pdi, terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_nd  <- ggpredict(fit_SES_nd,  terms = c("Dominance[all]", "Group"), type = "fixed")
+
+# Plots with different linetypes per group
+mh <- plot(gp_mh) +
+  aes(linetype = group) +
+  labs(
+    x = "",
+    y = "SES Morisita-Horn",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",  # don't show CI fill as a separate legend
+    colour   = guide_legend(override.aes = list(fill = NA)),   # <-- remove grey box
+    linetype = guide_legend(override.aes = list(fill = NA))    # <-- same for linetype legend
+  ) +
+  ggtitle("")
+
+pdi <- plot(gp_pdi) +
+  aes(linetype = group) +
+  labs(
+    x = "Honeybee dominance (ln-ratio)",
+    y = "SES PDI",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",
+    colour   = guide_legend(override.aes = list(fill = NA)),
+    linetype = guide_legend(override.aes = list(fill = NA))
+  ) +
+  ggtitle("")
+
+nd <- plot(gp_nd) +
+  aes(linetype = group) +
+  labs(
+    x = "",
+    y = "SES normalised degree",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",
+    colour   = guide_legend(override.aes = list(fill = NA)),
+    linetype = guide_legend(override.aes = list(fill = NA))
+  ) +
+  ggtitle("")
+
+# Combine and apply theme
+p <- (mh | pdi | nd) +
+  plot_layout(ncol = 3, nrow = 1, guides = "collect") &
+  base_theme &
+  theme(
+    legend.position = "right",
+    base_size = 7.5,
+    panel.spacing = unit(0.1, "lines"),
+    plot.margin = unit(c(0, 0, 0, 0), "pt"),
+    plot.tag = element_text(face = "bold", vjust = 0.35),
+    legend.key.width = unit(1.4, "cm")
+  )
+
+p + plot_annotation(tag_levels = "A", tag_suffix = ")")
+
+```
+
+\newpage
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure S3}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap (Morisita-Horn), B) PDI, and C) normalised degree, shown for the sensitivity analysis applying a nine-species minimum interaction threshold. Lines represent predicted values from the location-scale GLMM. The analysis included networks with at least five honeybee individuals and wild pollinator species with at least five individuals per sampling event."}
+library(ggeffects)
+library(ggplot2)
+library(patchwork)
+library(glmmTMB)
+library(ggeffects)
+library(ggplot2)
+library(patchwork)
+library(glmmTMB)
+
+# Load models
+fit_SES_pdi <- readRDS("Data/fit_SES_pdi_over9.rds")
+fit_SES_nd  <- readRDS("Data/fit_SES_nd_over9.rds")
+fit_SES_mh  <- readRDS("Data/fit_SES_mh_over9.rds")
+
+# Base theme
+base_theme <- theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    legend.key            = element_rect(fill = "white", colour = NA),
+    legend.background     = element_blank(),
+    legend.box.background = element_blank()
+  )
+
+# Marginal effects
+gp_mh  <- ggpredict(fit_SES_mh,  terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_pdi <- ggpredict(fit_SES_pdi, terms = c("Dominance[all]", "Group"), type = "fixed")
+gp_nd  <- ggpredict(fit_SES_nd,  terms = c("Dominance[all]", "Group"), type = "fixed")
+
+# Plots with different linetypes per group
+mh <- plot(gp_mh) +
+  aes(linetype = group) +
+  labs(
+    x = "",
+    y = "SES Morisita-Horn",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",  # don't show CI fill as a separate legend
+    colour   = guide_legend(override.aes = list(fill = NA)),   # <-- remove grey box
+    linetype = guide_legend(override.aes = list(fill = NA))    # <-- same for linetype legend
+  ) +
+  ggtitle("")
+
+pdi <- plot(gp_pdi) +
+  aes(linetype = group) +
+  labs(
+    x = "Honeybee dominance (ln-ratio)",
+    y = "SES PDI",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",
+    colour   = guide_legend(override.aes = list(fill = NA)),
+    linetype = guide_legend(override.aes = list(fill = NA))
+  ) +
+  ggtitle("")
+
+nd <- plot(gp_nd) +
+  aes(linetype = group) +
+  labs(
+    x = "",
+    y = "SES normalised degree",
+    color    = "Group",
+    linetype = "Group"
+  ) +
+  guides(
+    fill     = "none",
+    colour   = guide_legend(override.aes = list(fill = NA)),
+    linetype = guide_legend(override.aes = list(fill = NA))
+  ) +
+  ggtitle("")
+
+# Combine and apply theme
+p <- (mh | pdi | nd) +
+  plot_layout(ncol = 3, nrow = 1, guides = "collect") &
+  base_theme &
+  theme(
+    legend.position = "right",
+    base_size = 7.5,
+    panel.spacing = unit(0.1, "lines"),
+    plot.margin = unit(c(0, 0, 0, 0), "pt"),
+    plot.tag = element_text(face = "bold", vjust = 0.35),
+    legend.key.width = unit(1.4, "cm")
+  )
+
+p + plot_annotation(tag_levels = "A", tag_suffix = ")")
 ```
 
