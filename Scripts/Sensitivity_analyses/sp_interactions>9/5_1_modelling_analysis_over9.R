@@ -5,7 +5,7 @@
 #            to ecological and climatic predictors
 #
 # Input:
-#   - Data/modelling_data_int_over_one.rds     (final modeling dataset)
+#   - Data/modelling_data_int_over_nine.rds     (final modeling dataset)
 #
 # Output:
 #   
@@ -21,7 +21,7 @@ library(DHARMa)
 library(effects)
 library(car)
 #### Load data ####
-modelling_data = readRDS("Data/modelling_data_int_over_one.rds")
+modelling_data = readRDS("Data/modelling_data_int_over_nine.rds")
 #### Load function ####
 source("Scripts/export_table_function.R")
 names(modelling_data)
@@ -74,7 +74,7 @@ Anova(fit_SES_mh)
 check_collinearity(fit_SES_mh)
 
 #### Save data ####
-saveRDS(fit_SES_pdi, "Data/fit_SES_pdi_over1.rds")
-saveRDS(fit_SES_nd, "Data/fit_SES_nd_over1.rds")
-saveRDS(fit_SES_mh, "Data/fit_SES_mh_over1.rds")
+saveRDS(fit_SES_pdi, "Data/fit_SES_pdi_over9.rds")
+saveRDS(fit_SES_nd, "Data/fit_SES_nd_over9.rds")
+saveRDS(fit_SES_mh, "Data/fit_SES_mh_over9.rds")
 

@@ -9,7 +9,7 @@
 #   - Data/ecological_predictors.rds  (contains: degree_interactions, species_data,
 #                                      plants_per_network, habitat_net)
 #
-# Output: Data/modelling_data_int_over_one.rds
+# Output: Data/modelling_data_int_over_nine.rds
 #
 # Author: L. Marini
 # Reviewer: J.B. Lanuza
@@ -46,8 +46,8 @@ str(merged_data) ############ dataframe entering the modeling
 names(merged_data)
 modelling_data = subset(merged_data,
                  Pollinator_yes!="no"   &   
-                   sp_interactions >1     &
-                   Apis_interactions>4    &
+                   sp_interactions > 9     &
+                   Apis_interactions > 4    &
                    Pollinator_genus!="NA" &
                    sp_degree>0            &
                    n_plants>1)##
@@ -67,5 +67,5 @@ modelling_data = modelling_data %>%
   separate(id, into = c("study_id", "network_id", "date"), sep = "//")
 
 #### Save data ####
-saveRDS(modelling_data, "Data/modelling_data_int_over_one.rds")
+saveRDS(modelling_data, "Data/modelling_data_int_over_nine.rds")
 

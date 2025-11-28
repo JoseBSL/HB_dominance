@@ -4,9 +4,9 @@
 #            SES network metrics (ND, MH, PDI) by group.
 #
 # Inputs:
-#   - Data/fit_SES_nd_over1.rds
-#   - Data/fit_SES_mh_over1.rds
-#   - Data/fit_SES_pdi_over1.rds
+#   - Data/fit_SES_nd_over9.rds
+#   - Data/fit_SES_mh_over9.rds
+#   - Data/fit_SES_pdi_over9.rds
 #
 # Outputs:
 #   - Combined figure showing Dominance × Group effects
@@ -19,13 +19,12 @@
 
 library(ggeffects)
 library(ggplot2)
-library(ggpr)
 library(patchwork)
 
 #### Load data ####
-fit_SES_pdi = readRDS("Data/fit_SES_pdi_over1.rds")
-fit_SES_nd  = readRDS("Data/fit_SES_nd_over1.rds")
-fit_SES_mh  = readRDS("Data/fit_SES_mh_over1.rds")
+fit_SES_pdi = readRDS("Data/fit_SES_pdi_over9.rds")
+fit_SES_nd  = readRDS("Data/fit_SES_nd_over9.rds")
+fit_SES_mh  = readRDS("Data/fit_SES_mh_over9.rds")
 
 ###################### DOMINANCE X GROUP ################ 
 #graphics.off()
