@@ -62,7 +62,6 @@ compute_metrics = function(df,
     O_sq   <- rowSums(O^2)
     cross  <- as.numeric(O %*% f)
     
-    out$pianka <- cross / sqrt(pmax(f_sq * O_sq, eps))
     out$morisita_horn <- (2 * cross) /
       ((f_d + (O_sq / pmax(O_sum^2, eps))) * f_sum * pmax(O_sum, eps))
   }
@@ -81,7 +80,6 @@ compute_metrics = function(df,
   Sf     <- sum(Fp^2)
   So     <- rowSums(Op^2)
   
-  out$pref_pianka        <- numer / sqrt(pmax(Sf * So, eps))
   out$pref_morisita_horn <- (2 * numer) / pmax(Sf + So, eps)
   
   rownames(out) <- NULL
@@ -89,3 +87,4 @@ compute_metrics = function(df,
 }
 
 ###
+
