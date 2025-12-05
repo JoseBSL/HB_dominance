@@ -301,19 +301,24 @@ networks_row
 
 # Create arrow row
 arrow_row <- ggplot() +
-  annotate("segment",
-           x = 0.1, xend = 0.9,
-           y = 0.5, yend = 0.5,
-           arrow = arrow(type = "closed", length = unit(0.25, "cm")),
-           size = 1) +
-  annotate("text",
-           x = 0.5, y = 0.7,
-           label = "Increasing Apis dominance",
-           fontface = "bold", size = 5) +
+  annotation_custom(
+    grob = linesGrob(
+      x = unit(c(0, 1), "npc"),
+      y = unit(0.5, "npc"),
+      arrow = arrow(type = "closed", length = unit(0.25, "cm")),
+      gp = gpar(lwd = 2)
+    )
+  ) +
+  annotation_custom(
+    grob = textGrob(
+      "Increasing Apis dominance",
+      x = unit(0.5, "npc"),
+      y = unit(0.7, "npc"),
+      gp = gpar(fontface = "bold", cex = 1.2)
+    )
+  ) +
   theme_void() +
-  theme(
-    plot.margin = margin(0, 0, 5, 0)
-  )
+  theme(plot.margin = margin(0, 0, 0, 0))
 
 # Combine everything
 final_plot <- arrow_row / networks_row  +
