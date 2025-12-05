@@ -1,0 +1,310 @@
+---
+output: pdf_document
+---
+
+
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 5, fig.width = 10,  fig.cap= ""}
+############################################################
+# 3 scenarios of plant–pollinator networks
+# with different Apis dominance
+# + network plots (Poll1 & Poll2 coloured, Apis black)
+# + single summary barplot (Degree, Morisita, PDI)
+############################################################
+
+############################################################
+# 3 scenarios of plant–pollinator networks
+# with different Apis dominance
+############################################################
+
+## Load libraries ----
+library(dplyr)
+library(ggplot2)
+library(viridis)
+library(data.table)
+library(patchwork)
+library(tidyr)
+library(grid)
+
+source("Scripts/compute_metric_function.R")
+
+# Define matrices (unchanged) ---------------------------------------------
+M_low <- matrix(
+  c(0.1,   0, 0,
+    0.1,   1, 0,
+    0.1,   3, 2,
+    0,     0, 2),
+  nrow = 4,
+  byrow = TRUE
+)
+
+M_med <- matrix(
+  c(2,   0, 0,
+    2,   1, 0,
+    1,   2, 1,
+    0,   1, 2),
+  nrow = 4,
+  byrow = TRUE
+)
+
+M_high <- matrix(
+  c(3,   0,   0,
+    3,   1,   0.5,
+    2,   1,   0.5,
+    1.5, 1,   1),
+  nrow = 4,
+  byrow = TRUE
+)
+
+
+set_dimnames <- function(M) {
+  colnames(M) <- c("Apis", "Poll1", "Poll2")
+  rownames(M) <- c("Plant1", "Plant2", "Plant3", "Plant4")
+  M
+}
+
+M_low  <- set_dimnames(M_low)
+M_med  <- set_dimnames(M_med)
+M_high <- set_dimnames(M_high)
+
+############################################################
+## Helper: build network plot + metrics -------------------
+############################################################
+
+build_scenario <- function(M, title) {
+  # Edge list
+  edges <- as.data.frame(as.table(M)) %>%
+    dplyr::rename(
+      Plant      = Var1,
+      Pollinator = Var2,
+      Weight     = Freq
+    ) %>%
+    dplyr::filter(Weight > 0)
+  
+  # Node coordinates
+  plants <- data.frame(
+    name = rownames(M),
+    x    = 0,
+    y    = seq(1, nrow(M))
+  )
+  
+  polls <- data.frame(
+    name = colnames(M),
+    x    = 1,
+    y    = seq(1.5, 3.5, length.out = ncol(M))
+  )
+  
+  # ---- node strength (total interactions per species) ----
+  plant_strength <- rowSums(M)          # sum over pollinators
+  poll_strength  <- colSums(M)          # sum over plants
+  
+  plants$strength <- plant_strength[plants$name]
+  polls$strength  <- poll_strength[polls$name]
+  
+  nodes <- rbind(plants, polls)
+  
+  # Edges + coordinates
+  edges_xy <- edges %>%
+    dplyr::left_join(nodes, by = c("Plant" = "name")) %>%
+    dplyr::rename(x1 = x, y1 = y) %>%
+    dplyr::left_join(nodes, by = c("Pollinator" = "name")) %>%
+    dplyr::rename(x2 = x, y2 = y)
+  
+  # Colour groups
+  edges_xy <- edges_xy %>%
+    dplyr::mutate(
+      Pollinators = dplyr::case_when(
+        Pollinator == "Poll1" ~ "Species 1",
+        Pollinator == "Poll2" ~ "Species 2",
+        TRUE                  ~ "Honeybee"
+      )
+    )
+  
+  polls <- polls %>%
+    dplyr::mutate(
+      Pollinators = dplyr::case_when(
+        name == "Poll1" ~ "Species 1",
+        name == "Poll2" ~ "Species 2",
+        TRUE            ~ "Honeybee"
+      )
+    )
+  
+  # Long format for metrics
+  df_long <- as.data.frame(as.table(M)) %>%
+    dplyr::rename(
+      plant       = Var1,
+      pollinator  = Var2,
+      interaction = Freq
+    ) %>%
+    dplyr::filter(interaction > 0)
+  
+  metrics <- compute_metrics(
+    df              = df_long,
+    focal_species   = "Apis",
+    return_observed = TRUE
+  )
+  
+  # ---- NETWORK plot ----
+  p_net <- ggplot() +
+    # edges: linewidth ∝ interaction strength
+    geom_segment(
+      data = edges_xy,
+      aes(x = x1, y = y1,
+          xend = x2, yend = y2,
+          linewidth = Weight,
+          color = Pollinators),
+      alpha = 0.4,
+      show.legend = FALSE
+    ) +
+    scale_color_manual(values = c(
+      "Species 1" = viridis::viridis(3)[1],
+      "Species 2" = viridis::viridis(3)[2],
+      "Honeybee"  = "orange2"
+    )) +
+    scale_linewidth(range = c(0.3, 2)) +
+    
+    # plant species: point size ∝ total interactions
+geom_point(
+  data = plants,
+  aes(x = x, y = y, size = strength, shape = "Plants"),
+  color = "gray53",
+  fill  = "gray53",
+  stroke = 1
+) +
+    scale_shape_manual(
+  name = "Plant species",
+  values = c("Plants" = 22),
+  label="")+
+    geom_point(
+      data = polls,
+      aes(x = x, y = y, size = strength, color = Pollinators)
+    ) +
+    
+    scale_size(range = c(3, 8)) +
+guides(
+  linewidth = "none",
+  size = "none",
+  colour = guide_legend(order = 1, 
+    override.aes = list(       
+      size = 6,        # big legend points
+      alpha = 1,       # full opacity for legend
+      stroke = 1,      # clear outline
+      linewidth = 0    # <-- removes the line in the legend
+    )
+  ),
+  shape = guide_legend(order = 2, override.aes = list(       
+    size = 6,
+    color = "gray53",
+    fill  = "gray53",
+    shape = 22
+  ))) +
+    theme_void() +
+    theme(
+      legend.position = "none",
+      plot.margin  = margin(5, 20, 5, 20),
+      panel.border = element_rect(colour = "black", 
+                                  fill = NA, linewidth = 0.6),
+      plot.title   = element_text(hjust = 0.5, face = "bold")
+    ) +
+    coord_flip() +
+    scale_x_continuous(expand = expansion(mult = 0.2)) +
+    scale_y_continuous(expand = expansion(mult = 0.2)) +
+    ggtitle(title)+
+  theme(plot.margin = margin(0, 0, 0, 0)) +
+    theme(
+    legend.position    = "bottom",
+    legend.title       = element_text(size = 14, face = "bold"),
+    legend.text        = element_text(size = 13),
+    legend.key.size    = unit(1, "cm")
+  )
+  
+  list(plot = p_net, metrics = metrics)
+}
+
+############################################################
+## 3. Build scenarios & combine with arrow ----------------
+############################################################
+
+sc_low  <- build_scenario(M_low,  "Low")
+sc_med  <- build_scenario(M_med,  "Medium")
+sc_high <- build_scenario(M_high, "High")
+
+networks_row <- sc_low$plot | sc_med$plot | sc_high$plot
+
+
+## TOP TRIANGLE ----
+df_tri_top <- data.frame(
+  x = c(1, 0, 1),
+  y = c(-1.2, -0.7, -0.2)
+)
+
+triangle_top <- ggplot() +
+  geom_polygon(
+    data  = df_tri_top,
+    aes(x, y),
+    fill  = alpha("black", 0.2),
+    color = "black",
+    linewidth = 1
+  ) +
+  coord_cartesian(xlim = c(0, 1), ylim = c(-0.5, 1.2), clip = "off") +
+  theme_void() +
+  annotate(
+    "text",
+    x = 0.5, y = 0.1,
+    label = "Honeybee dominance",
+    fontface = "bold", size = 5.5
+  ) +
+  theme(legend.position = "none")  # just to be explicit
+
+
+## BOTTOM TRIANGLE ----
+df_tri_bottom <- data.frame(
+  x = c(0, 1, 0),
+  y = c(-0.6, -0.3, 0.4)
+)
+
+triangle_bottom <- ggplot() +
+  geom_polygon(
+    data  = df_tri_bottom,
+    aes(x, y),
+    fill  = alpha("black", 0.2),
+    color = "black",
+    linewidth = 1
+  ) +
+  annotate(
+    "text",
+    x = 0.5, y = 0.6,
+    label = "Resource overlap and specialisation",
+    fontface = "bold", size = 5.5
+  ) +
+  coord_cartesian(
+    xlim = c(0, 1),
+    # ↑ Increase the upper limit to create empty space on TOP,
+    #    which visually pushes the triangle DOWN in the panel:
+    ylim = c(-0.2, 1.4),
+    clip = "off"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "none",
+    # a bit of panel margin so it doesn't hug the legend
+    plot.margin = margin(t = 5, r = 5, b = 0, l = 5)
+  )
+
+## FINAL UNIFIED PLOT ----
+final_plot <- triangle_top / networks_row / triangle_bottom +
+  plot_layout(
+    # make the bottom row a bit shorter so the legend sits closer up
+    heights = c(1.25, 6, 1.25),
+    guides  = "collect"
+  ) &
+  theme(
+    legend.position = "bottom",
+    # negative top margin pulls the legend upward
+    legend.margin = margin(t = -70, b = 5),
+        plot.margin = margin(t = -5, r = 0, b = 20, l = 0)
+
+  )
+
+final_plot
+```
