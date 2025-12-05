@@ -44,9 +44,7 @@ saveRDS(metrics_all_dt, "Data/pollinator_metrics.rds")
 ################  Z-score ##### 
 # columns to compute SES
 metric_cols = c(
-  "pianka",
   "morisita_horn",
-  "pref_pianka",
   "pref_morisita_horn",
   "norm_degree", 
   "pdi"
