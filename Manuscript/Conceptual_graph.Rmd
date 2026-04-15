@@ -26,36 +26,40 @@ library(patchwork)
 library(tidyr)
 library(grid)
 
-source("Scripts/compute_metric_function.R")
+source("../Scripts/compute_metric_function.R")
 
-# Define matrices (unchanged) ---------------------------------------------
+# LOW dominance --------------------------------------------
+# High overlap with Apis + high specialisation
 M_low <- matrix(
-  c(0.1,   0, 0,
-    0.1,   1, 0,
-    0.1,   3, 2,
-    0,     0, 2),
+  c(3,   2.5, 0,
+    3,   0,   2.5,
+    0,   2,   0,
+    0,   0,   2),
   nrow = 4,
   byrow = TRUE
 )
 
+# MEDIUM dominance -----------------------------------------
+# Broader diets, partial shift, moderate overlap
 M_med <- matrix(
-  c(2,   0, 0,
-    2,   1, 0,
-    1,   2, 1,
-    0,   1, 2),
+  c(5,   1.5, 0.5,
+    5,   0.5, 1.5,
+    2,   1.5, 1.5,
+    0.5, 1.5, 1.5),
   nrow = 4,
   byrow = TRUE
 )
 
+# HIGH dominance -------------------------------------------
+# Apis dominates core plants; others generalise but shift away
 M_high <- matrix(
-  c(3,   0,   0,
-    3,   1,   0.5,
-    2,   1,   0.5,
-    1.5, 1,   1),
+  c(8,   0.2, 0.1,
+    7,   0.3, 0.2,
+    1,   1.5, 1.5,
+    0.5, 1.5, 1.5),
   nrow = 4,
   byrow = TRUE
 )
-
 
 set_dimnames <- function(M) {
   colnames(M) <- c("Apis", "Poll1", "Poll2")
