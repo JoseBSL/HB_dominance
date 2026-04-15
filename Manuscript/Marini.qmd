@@ -751,7 +751,7 @@ The SESs of normalised degree were mainly negative or near 0, indicating that th
 
 The residuals’ diagnostics for the four scale-location models were satisfactory, given the complexity of the data and the modelling. The deviations were minor, but statistically significant due to the large number of observations. The sensitivity analysis indicated that removing species with different thresholds of minimum interactions per network (n = 2, and 10) did not alter the observed patterns (**Tables S4-S5-S6** and **Figure S3** for a threshold of 2 interactions, and **Tables S7-S8-S9** and **Figure S4** for a threshold of 10 interactions).
 
-```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure 4}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap with the honeybee (Morisita-Horn index), B) specialisation (PDI) and C) normalised degree of wild pollinators across different groups of flower-visiting insects: bees, coleopterans (Coleo.), non-bee hymenopterans (Hym.), lepidopterans (Lepid.), non-syrphid Diptera (Non-syr.), and syrphids (Syrph.). Lines represent predicted values from location-scale glmm. The analysis included networks with at least 5 honeybee individuals and wild pollinator species with at least 5 individuals per sampling event."}
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 3, fig.width = 7.5,  fig.cap= "\\textbf{Figure 4}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap with the honeybee (Morisita-Horn index), B) specialisation (PDI) and C) normalised degree of wild pollinators across different groups of flower-visiting insects: bees, coleopterans (Coleo.), non-bee hymenopterans (Hym.), lepidopterans (Lepid.), non-syrphid Diptera (Non-syr.), and syrphids (Syrph.). Lines represent predicted values from location-scale glmm. The analysis included networks with at least 5 honeybee individuals and wild pollinator species with at least 5 individuals per sampling event."}
 
 library(ggeffects)
 library(ggplot2)
@@ -902,14 +902,20 @@ p <- (mh | pdi | nd) +
   plot_layout(ncol = 3, nrow = 1, guides = "collect") &
   base_theme &
   theme(
-    legend.position = "right",
+    legend.position = "bottom",
+    legend.direction = "horizontal",
     panel.spacing = grid::unit(0.1, "lines"),
-    plot.margin = grid::unit(c(0, 0, 0, 0), "pt"),
+    legend.margin = margin(t = -1, b = 0, unit = "pt"), 
+    plot.margin = grid::unit(c(0, 2.5, 2, 0), "pt"),
     plot.tag = element_text(size= 14, face = "bold", vjust = 0.35),
     legend.key.width = grid::unit(1.25, "cm")
   )
 
-p + plot_annotation(tag_levels = "A", tag_suffix = ")")
+p + plot_annotation(tag_levels = "A", tag_suffix = ")") &
+  guides(
+    colour   = guide_legend(nrow = 1, override.aes = list(fill = NA)),
+    linetype = guide_legend(nrow = 1, override.aes = list(fill = NA))
+  )
 ```
 
 # DISCUSSION
@@ -1669,7 +1675,7 @@ p
 
 \newpage
 
-```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure S3}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap (Morisita-Horn), B) specialisation (PDI), and C) normalised degree, shown for the sensitivity analysis applying a two-species minimum interaction threshold. The floral visitor groups are: bees, coleopterans (Coleo.), non-bee hymenopterans (Hym.), lepidopterans (Lepid.), non-syrphid Diptera (Non-syr.), and syrphids (Syrph.). Lines represent predicted values from the location-scale GLMM. The analysis included networks with at least five honeybee individuals and wild pollinator species with at least five individuals per sampling event."}
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 3, fig.width = 7.5,  fig.cap= "\\textbf{Figure S3}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap (Morisita-Horn), B) specialisation (PDI), and C) normalised degree, shown for the sensitivity analysis applying a two-species minimum interaction threshold. The floral visitor groups are: bees, coleopterans (Coleo.), non-bee hymenopterans (Hym.), lepidopterans (Lepid.), non-syrphid Diptera (Non-syr.), and syrphids (Syrph.). Lines represent predicted values from the location-scale GLMM. The analysis included networks with at least five honeybee individuals and wild pollinator species with at least five individuals per sampling event."}
 
 library(ggeffects)
 library(ggplot2)
@@ -1820,20 +1826,26 @@ p <- (mh | pdi | nd) +
   plot_layout(ncol = 3, nrow = 1, guides = "collect") &
   base_theme &
   theme(
-    legend.position = "right",
+    legend.position = "bottom",
+    legend.direction = "horizontal",
     panel.spacing = grid::unit(0.1, "lines"),
-    plot.margin = grid::unit(c(0, 0, 0, 0), "pt"),
+    legend.margin = margin(t = -1, b = 0, unit = "pt"), 
+    plot.margin = grid::unit(c(0, 2.5, 2, 0), "pt"),
     plot.tag = element_text(size= 14, face = "bold", vjust = 0.35),
     legend.key.width = grid::unit(1.25, "cm")
   )
 
-p + plot_annotation(tag_levels = "A", tag_suffix = ")")
+p + plot_annotation(tag_levels = "A", tag_suffix = ")") &
+  guides(
+    colour   = guide_legend(nrow = 1, override.aes = list(fill = NA)),
+    linetype = guide_legend(nrow = 1, override.aes = list(fill = NA))
+  )
 
 ```
 
 \newpage
 
-```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 2.5, fig.width = 8,  fig.cap= "\\textbf{Figure S4}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap (Morisita-Horn), B) specialisation (PDI), and C) normalised degree, shown for the sensitivity analysis applying a ten-species minimum interaction threshold. The floral visitor groups are: bees, coleopterans (Coleo.), non-bee hymenopterans (Hym.), lepidopterans (Lepid.), non-syrphid Diptera (Non-syr.), and syrphids (Syrph.). Lines represent predicted values from the location-scale GLMM. The analysis included networks with at least five honeybee individuals and wild pollinator species with at least five individuals per sampling event."}
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height = 3, fig.width = 7.5,  fig.cap= "\\textbf{Figure S4}. Effect of honeybee dominance on the standardised effect size (SES) of A) resource overlap (Morisita-Horn), B) specialisation (PDI), and C) normalised degree, shown for the sensitivity analysis applying a ten-species minimum interaction threshold. The floral visitor groups are: bees, coleopterans (Coleo.), non-bee hymenopterans (Hym.), lepidopterans (Lepid.), non-syrphid Diptera (Non-syr.), and syrphids (Syrph.). Lines represent predicted values from the location-scale GLMM. The analysis included networks with at least five honeybee individuals and wild pollinator species with at least five individuals per sampling event."}
 library(ggeffects)
 library(ggplot2)
 library(patchwork)
@@ -1987,13 +1999,19 @@ p <- (mh | pdi | nd) +
   plot_layout(ncol = 3, nrow = 1, guides = "collect") &
   base_theme &
   theme(
-    legend.position = "right",
+    legend.position = "bottom",
+    legend.direction = "horizontal",
     panel.spacing = grid::unit(0.1, "lines"),
-    plot.margin = grid::unit(c(0, 0, 0, 0), "pt"),
+    legend.margin = margin(t = -1, b = 0, unit = "pt"), 
+    plot.margin = grid::unit(c(0, 2.5, 2, 0), "pt"),
     plot.tag = element_text(size= 14, face = "bold", vjust = 0.35),
     legend.key.width = grid::unit(1.25, "cm")
   )
 
-p + plot_annotation(tag_levels = "A", tag_suffix = ")")
+p + plot_annotation(tag_levels = "A", tag_suffix = ")") &
+  guides(
+    colour   = guide_legend(nrow = 1, override.aes = list(fill = NA)),
+    linetype = guide_legend(nrow = 1, override.aes = list(fill = NA))
+  )
 ```
 
