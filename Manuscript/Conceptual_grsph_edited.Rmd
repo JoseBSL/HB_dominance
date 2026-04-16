@@ -2,7 +2,7 @@
 output: pdf_document
 ---
 
-```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height=5.4, fig.width=9}
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height=4.8, fig.width=6}
 library(dplyr)
 library(ggplot2)
 library(viridis)
@@ -25,9 +25,9 @@ M_low <- matrix(
 )
 
 M_high <- matrix(
-  c(3.0, 0,
-    1.1, 0,
-    2.4, 0.5,
+  c(2.5, 0,
+    2.5, 0,
+    2.5, 0.5,
     0.0, 1.2,
     0.0, 1.8),
   nrow = 5,
@@ -56,40 +56,44 @@ build_scenario <- function(M, title) {
     ) %>%
     filter(Weight > 0)
   
-  plants <- data.frame(
-    name = rownames(M),
-    x = 0,
-    y = seq(1, nrow(M))
-  )
-  
-  polls <- data.frame(
-    name = colnames(M),
-    x = 1,
-    y = c(1.8, max(plants$y) - 0.2)
-  )
-  
-  plant_strength <- rowSums(M)
-  poll_strength  <- colSums(M)
-  
-  plants$strength <- plant_strength[plants$name]
-  polls$strength  <- poll_strength[polls$name]
-  
+ plants <- data.frame(
+  name = rownames(M),
+  x = 0,
+  y = seq(1, nrow(M))
+) %>%
+  mutate(label = paste0("P", seq_len(n())))
+ 
+if (nrow(M) == 3) {
+  poll_y <- c(1.5, 2.5)   # Low panel
+} else if (nrow(M) == 5) {
+  poll_y <- c(2.0, 4.0)   # High panel
+} else {
+  mid_y <- mean(range(plants$y))
+  offset <- 0.75
+  poll_y <- c(mid_y - offset, mid_y + offset)
+}
+
+polls <- data.frame(
+  name = colnames(M),
+  x = 1,
+  y = poll_y,
+  label = NA
+
+)
   nodes <- rbind(plants, polls)
   
   edges_xy <- edges %>%
     left_join(nodes, by = c("Plant" = "name")) %>%
     rename(x1 = x, y1 = y) %>%
     left_join(nodes, by = c("Pollinator" = "name")) %>%
-    rename(x2 = x, y2 = y)
-  
-  edges_xy <- edges_xy %>%
+    rename(x2 = x, y2 = y) %>%
     mutate(
-      Pollinators = ifelse(Pollinator == "Poll1", "Species 1", "Honeybee")
+      Pollinators = ifelse(Pollinator == "Poll1", "Wild pollinator", "Honeybee")
     )
   
   polls <- polls %>%
     mutate(
-      Pollinators = ifelse(name == "Poll1", "Species 1", "Honeybee")
+      Pollinators = ifelse(name == "Poll1", "Wild pollinator", "Honeybee")
     )
   
   ggplot() +
@@ -106,37 +110,45 @@ build_scenario <- function(M, title) {
       show.legend = FALSE
     ) +
     scale_color_manual(values = c(
-      "Species 1" = viridis(3)[1],
-      "Honeybee"  = "orange2"
+      "Wild pollinator" = viridis(3)[2],
+      "Honeybee" = "#E69F00"
     )) +
-    scale_linewidth(range = c(0.3, 2.2)) +
-    scale_alpha(range = c(0.20, 0.75), guide = "none") +
+    scale_linewidth(range = c(0.6, 3.2)) +
+    scale_alpha(range = c(0.08, 0.82), guide = "none") +
     
     geom_point(
       data = plants,
-      aes(x = x, y = y, size = strength, shape = "Plants"),
+      aes(x = x, y = y, shape = "Plant"),
+      size = 8,
       color = "gray53",
       fill  = "gray53",
       stroke = 1
     ) +
+    geom_text(
+  data = plants,
+  aes(x = x, y = y, label = label),
+  nudge_x = -0.18,
+  size = 4,
+  color = "gray25",
+  fontface = "bold"
+) +
     scale_shape_manual(
-      name = "Plant species",
-      values = c("Plants" = 22),
-      labels = ""
+      values = c("Plant" = 22),
+      labels = c("Plant" = "Plant")
     ) +
     
     geom_point(
       data = polls,
-      aes(x = x, y = y, size = strength, color = Pollinators)
+      aes(x = x, y = y, color = Pollinators),
+      size = 8
     ) +
-    
-    scale_size(range = c(3.5, 8.5)) +
     
     guides(
       linewidth = "none",
       size = "none",
       colour = guide_legend(
         order = 1,
+        title = NULL,
         override.aes = list(
           size = 6,
           alpha = 1,
@@ -146,6 +158,7 @@ build_scenario <- function(M, title) {
       ),
       shape = guide_legend(
         order = 2,
+        title = NULL,
         override.aes = list(
           size = 6,
           color = "gray53",
@@ -157,13 +170,13 @@ build_scenario <- function(M, title) {
     theme_void() +
     theme(
       legend.position = "none",
-      plot.margin  = margin(5, 20, 5, 20),
-      panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.6),
-      plot.title   = element_text(hjust = 0.5, face = "bold", size = 18)
+      plot.margin  = margin(5, 5, 5, 5),
+      panel.border = element_rect(colour = "black", fill = NA, linewidth = 1.25),
+      plot.title   = element_text(hjust = 0.5, face = "bold", size = 15)
     ) +
     coord_flip() +
-    scale_x_continuous(expand = expansion(mult = 0.18)) +
-    scale_y_continuous(expand = expansion(mult = 0.18)) +
+    scale_x_continuous(expand = expansion(mult = 0.12)) +
+    scale_y_continuous(expand = expansion(mult = 0.12)) +
     ggtitle(title)
 }
 
@@ -176,44 +189,24 @@ p_high <- build_scenario(M_high, "High")
 networks_row <- p_low | p_high
 
 # =========================================================
-# Arrows
+# Bottom arrow only
 # =========================================================
-triangle_top <- ggplot() +
-  geom_polygon(
-    data = data.frame(
-      x = c(1, 0, 1),
-      y = c(-1.2, -0.7, -0.2)
-    ),
-    aes(x, y),
-    fill = alpha("black", 0.2),
-    color = "black",
-    linewidth = 1
-  ) +
-  coord_cartesian(xlim = c(0, 1), ylim = c(-0.5, 1.2), clip = "off") +
-  theme_void() +
-  annotate(
-    "text",
-    x = 0.5, y = 0.1,
-    label = "Honeybee dominance",
-    fontface = "bold", size = 5.8
-  )
-
 triangle_bottom <- ggplot() +
   geom_polygon(
     data = data.frame(
       x = c(0, 1, 0),
-      y = c(-0.6, -0.3, 0.4)
+      y = c(-0.8, -0.5, 0.2)
     ),
     aes(x, y),
-    fill = alpha("black", 0.2),
-    color = "black",
+    fill = alpha("#5F7F7A", 0.2),
+    color = "#5F7F7A",
     linewidth = 1
   ) +
   annotate(
     "text",
-    x = 0.5, y = 0.70,
-    label = "Overlap with honeybees and specialisation",
-    fontface = "bold", size = 5.4
+    x = 0.5, y = 0.6,
+    label = "Wild pollinator overlap with honeybees and specialization",
+    fontface = "bold", size = 5.2
   ) +
   coord_cartesian(
     xlim = c(0, 1),
@@ -222,20 +215,35 @@ triangle_bottom <- ggplot() +
   ) +
   theme_void() +
   theme(
-    plot.margin = margin(8, 5, 18, 5)
+    plot.margin = margin(8, 5, 10, 5)
   )
+
+
+title_top <- ggplot() +
+  annotate(
+    "text",
+    x = 0.5, y = 0.14,
+    label = "Honeybee dominance",
+    fontface = "bold",
+    size = 6
+  ) +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+  theme_void()
 
 # =========================================================
 # Final plot
 # =========================================================
-final_plot <- triangle_top / networks_row / triangle_bottom +
+final_plot <- title_top / networks_row / triangle_bottom +
   plot_layout(
-    heights = c(1.2, 6, 1.4),
+    heights = c(2,6, 1.35),
     guides  = "collect"
   ) &
   theme(
     legend.position = "bottom",
-    plot.margin = margin(t = -5, r = 0, b = 10, l = 0)
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12),
+    plot.margin = margin(t = 0, r = 0, b = 5, l = 0),
+    panel.spacing = unit(0, "pt")
   )
 
 final_plot
