@@ -1,8 +1,18 @@
 ---
-output: pdf_document
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+  - \usepackage{caption}
+  - \captionsetup[figure]{skip=0pt}
+  - \captionsetup[figure]{labelformat=empty}
 ---
 
-```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", fig.height=4.8, fig.width=6}
+
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, dpi=5000, out.width="90%", fig.height = 4.8, fig.width = 6,  fig.cap= ""}
 library(dplyr)
 library(ggplot2)
 library(viridis)
@@ -247,3 +257,4 @@ final_plot <- title_top / networks_row / triangle_bottom +
   )
 
 final_plot
+```
