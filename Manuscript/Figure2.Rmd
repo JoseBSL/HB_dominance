@@ -1,0 +1,254 @@
+---
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+  - \usepackage{caption}
+  - \captionsetup[figure]{skip=0pt}
+  - \captionsetup[figure]{labelformat=empty}
+---
+
+```{r echo=FALSE, message=FALSE, dpi=5000, cache=FALSE, warning=FALSE, out.width="85%", fig.height=6.5, fig.width=6, fig.cap= ""}
+
+library(dplyr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(giscoR)
+library(ggtext)
+
+
+#--------------------------------------------------
+# 0. Load data
+#--------------------------------------------------
+
+df     <- readRDS("../Data/filtered_interaction_data.rds")
+lanuza <- readRDS("../Data/raw_interaction_data.rds")
+
+#--------------------------------------------------
+# 1. Get Study IDs and coordinates
+#--------------------------------------------------
+
+id <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>%
+  distinct(Study_id) %>%
+  pull()
+
+coordinates_sf = lanuza %>%
+  filter(Study_id %in% id) %>%
+  select(Study_id, Latitude, Longitude) %>%
+  distinct() %>%
+  group_by(Study_id) %>%
+  slice(1) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>%
+  st_transform(3035)
+
+#--------------------------------------------------
+# 2. Pollinator richness (number of pollinators per study)
+#--------------------------------------------------
+
+pollinator_richness <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>%
+  group_by(Study_id) %>%
+  summarise(
+    n_pollinators = n_distinct(pollinator),
+    .groups = "drop"
+  )
+
+#--------------------------------------------------
+# 3. Study-level Apis vs Other interactions
+#--------------------------------------------------
+
+apis_wide <- df %>%
+  separate(id, into = c("Study_id", "Location", "Date"), sep = "//") %>%
+  mutate(
+    is_apis = if_else(
+      grepl("Apis", pollinator, ignore.case = TRUE),
+      "Apis",
+      "Other"
+    )
+  ) %>%
+  group_by(Study_id, is_apis) %>%
+  summarise(
+    n_interactions = sum(interaction, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from  = is_apis,
+    values_from = n_interactions,
+    values_fill = 0
+  )
+
+#--------------------------------------------------
+# 4. Combine coordinates, interactions, and richness
+#--------------------------------------------------
+
+pie_data <- coordinates_sf %>%
+  left_join(apis_wide, by = "Study_id") %>%
+  left_join(pollinator_richness, by = "Study_id") %>%
+  mutate(
+    x = st_coordinates(geometry)[, 1],
+    y = st_coordinates(geometry)[, 2],
+    total_inter     = Apis + Other,
+    prop_apis_study = if_else(total_inter > 0, Apis / total_inter, NA_real_)
+  ) %>%
+  st_drop_geometry()
+
+# Convert back to sf for spatial operations
+pie_sf <- st_as_sf(
+  pie_data,
+  coords = c("x", "y"),
+  crs    = 3035,
+  remove = FALSE
+)
+
+#--------------------------------------------------
+# 5. Countries layer (for reference only)
+#--------------------------------------------------
+
+cntries <- gisco_get_countries(region = "Europe", year = "2016") %>%
+  st_transform(3035)
+
+#--------------------------------------------------
+# 6. Build FULL rectangular grid over Europe extent
+#    (NOT clipped by borders)
+#--------------------------------------------------
+
+bbox_grid <- st_bbox(c(
+  xmin = 2200000,
+  xmax = 7150000,
+  ymin = 1380000,
+  ymax = 5500000
+), crs = st_crs(3035))
+
+grid_poly <- st_make_grid(
+  st_as_sfc(bbox_grid),
+  cellsize = 100000,   # 100 km grid
+  square   = TRUE
+)
+
+grid_sf <- st_sf(
+  grid_id  = seq_along(grid_poly),
+  geometry = grid_poly
+)
+
+#--------------------------------------------------
+# 7. Assign studies to grid cells & aggregate
+#    (weight by number of pollinators per study)
+#--------------------------------------------------
+
+# Join each point to the grid cell it falls in
+join <- st_join(pie_sf, grid_sf, join = st_within)
+
+# Weighted aggregation per grid cell
+grid_agg <- join %>%
+  st_drop_geometry() %>%
+  group_by(grid_id) %>%
+  summarise(
+    prop_apis = if (all(is.na(prop_apis_study)) || all(is.na(n_pollinators))) {
+      NA_real_
+    } else {
+      weighted.mean(prop_apis_study, w = n_pollinators, na.rm = TRUE)
+    },
+    n_studies    = n(),
+    total_weight = sum(n_pollinators, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Attach aggregated values back to all grid cells
+grid_full <- grid_sf %>%
+  left_join(grid_agg, by = "grid_id") %>%
+  mutate(
+    prop_apis_perc = prop_apis * 100   # convert to percentage for plotting
+  )
+
+#--------------------------------------------------
+# 8. Get centroids for symbol plotting
+#--------------------------------------------------
+
+grid_centroids <- st_centroid(grid_full)
+
+grid_centroids_df <- grid_centroids %>%
+  mutate(
+    cx = st_coordinates(geometry)[, 1],
+    cy = st_coordinates(geometry)[, 2]
+  ) %>%
+  st_drop_geometry()
+
+#--------------------------------------------------
+# 9. Plot: background grid + size-varying squares
+#--------------------------------------------------
+# 8b. Breaks for legends
+
+size_limits <- range(grid_centroids_df$total_weight, na.rm = TRUE)
+size_breaks <- pretty(size_limits, n = 4)
+
+ggplot() +
+  # Country polygons as reference
+  geom_sf(
+    data  = cntries,
+    fill  = "grey85",
+    color = "black",
+    size  = 0.1
+  ) +
+  # Light background grid (all same size, low alpha)
+  geom_sf(
+    data  = grid_full,
+    fill  = NA,
+    color = "grey90",
+    size  = 0.1
+  ) +
+  # Squares at centroids: size = total pollinator richness per cell,
+  # fill = weighted proportion of Apis interactions
+  geom_point(
+    data = grid_centroids_df,
+    aes(
+      x    = cx,
+      y    = cy,
+      size = total_weight,
+      fill = prop_apis_perc
+    ),
+    shape  = 22,  # filled square
+    color  = "black",
+    stroke = 0.1
+  ) +
+  coord_sf(
+    xlim   = c(2200000, 7150000),
+    ylim   = c(1380000, 5500000),
+    expand = FALSE
+  ) +
+  scale_fill_viridis_c(
+    option   = "C",
+    na.value = NA,
+    name     = "Honeybee interactions (%)",
+    breaks   = c(0,20,40,60),
+    labels   = c(0,20,40,60),
+    limits   = c(0, 70), 
+  ) +
+  scale_size_continuous(
+    name = "Total pollinator\nrichness",
+    range = c(1, 6.5)  # tweak as needed
+  ) +
+  guides(
+    fill = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.background = element_rect(fill = NA),
+    panel.border     = element_rect(colour = "black", fill = NA, size = 1),
+    legend.position  = "right",
+    legend.key.size = unit(0.5, "lines"),
+    axis.text  = element_blank(),
+    axis.ticks = element_blank(),
+    legend.title    = element_markdown(size = 10),
+    plot.margin      = margin(t = 5, r = 5, b = 5, l = 5)) +
+  xlab(NULL) +
+  ylab(NULL)
+
+
+```
