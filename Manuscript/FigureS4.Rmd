@@ -10,7 +10,7 @@ header-includes:
   - \captionsetup[figure]{labelformat=empty}
 ---
 
-```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", dpi=5000, fig.height = 3, fig.width = 7.5,  fig.cap= ""}
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", dpi=5000, fig.height = 3.25, fig.width = 7.5,  fig.cap= ""}
 library(ggeffects)
 library(ggplot2)
 library(patchwork)
@@ -64,12 +64,38 @@ gp_mh  <- ggpredict(fit_SES_mh,  terms = c("Dominance[all]", "Group"), type = "f
 gp_pdi <- ggpredict(fit_SES_pdi, terms = c("Dominance[all]", "Group"), type = "fixed")
 gp_nd  <- ggpredict(fit_SES_nd,  terms = c("Dominance[all]", "Group"), type = "fixed")
 
+group_breaks <- c("Bees", "Coleo.", "Hymen.", "Lepid.", "Non-syr.", "Syrph.")
+
+group_labels <- c(
+  "Bees" = "Bees",
+  "Coleo." = "Coleoptera",
+  "Hymen." = "Non-bee Hymenoptera",
+  "Lepid." = "Lepidoptera",
+  "Non-syr." = "Non-syrphid Diptera",
+  "Syrph." = "Syrphidae"
+)
+
+my_cols <- setNames(my_cols, group_breaks)
+my_lty  <- setNames(my_lty, group_breaks)
+
 # Plots
 mh <- plot(gp_mh) +
   aes(linetype = group) +
-  scale_color_manual(values = my_cols) +
-  scale_fill_manual(values = my_cols) +
-  scale_linetype_manual(values = my_lty) +
+  scale_color_manual(
+    values = my_cols,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
+  scale_fill_manual(
+    values = my_cols,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
+  scale_linetype_manual(
+    values = my_lty,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
   labs(
     x = "",
     y = "SES of Resource Overlap",
@@ -85,9 +111,21 @@ mh <- plot(gp_mh) +
 
 pdi <- plot(gp_pdi) +
   aes(linetype = group) +
-  scale_color_manual(values = my_cols) +
-  scale_fill_manual(values = my_cols) +
-  scale_linetype_manual(values = my_lty) +
+  scale_color_manual(
+    values = my_cols,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
+  scale_fill_manual(
+    values = my_cols,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
+  scale_linetype_manual(
+    values = my_lty,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
   labs(
     x = "Honeybee Dominance (ln-ratio)",
     y = "SES of Specialisation",
@@ -103,9 +141,21 @@ pdi <- plot(gp_pdi) +
 
 nd <- plot(gp_nd) +
   aes(linetype = group) +
-  scale_color_manual(values = my_cols) +
-  scale_fill_manual(values = my_cols) +
-  scale_linetype_manual(values = my_lty) +
+  scale_color_manual(
+    values = my_cols,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
+  scale_fill_manual(
+    values = my_cols,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  ) +
+  scale_linetype_manual(
+    values = my_lty,
+    breaks = group_breaks,
+    labels = group_labels[group_breaks]
+  )+
   labs(
     x = "",
     y = "SES of Normalised Degree",
@@ -175,8 +225,8 @@ p <- (mh | pdi | nd) +
 
 p + plot_annotation(tag_levels = "A", tag_suffix = ")") &
   guides(
-    colour   = guide_legend(nrow = 1, override.aes = list(fill = NA)),
-    linetype = guide_legend(nrow = 1, override.aes = list(fill = NA))
+    colour   = guide_legend(nrow = 2, override.aes = list(fill = NA)),
+    linetype = guide_legend(nrow = 2, override.aes = list(fill = NA))
   )
 ```
 
