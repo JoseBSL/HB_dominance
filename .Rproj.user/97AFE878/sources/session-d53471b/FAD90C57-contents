@@ -1,12 +1,26 @@
+---
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+  - \usepackage{caption}
+  - \captionsetup[figure]{skip=0pt}
+  - \captionsetup[figure]{labelformat=empty}
+---
+
+```{r echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, out.width="100%", dpi=5000, fig.height = 3.5, fig.width = 7.5,  fig.cap= ""}
+
 library(ggeffects)
 library(ggplot2)
 library(patchwork)
 library(glmmTMB)
 library(scales)
 
-fit_SES_pdi <- readRDS("Data/fit_SES_pdi_groups.rds")
-fit_SES_nd  <- readRDS("Data/fit_SES_nd_groups.rds")
-fit_SES_mh  <- readRDS("Data/fit_SES_mh_groups.rds")
+fit_SES_pdi <- readRDS("../Data/fit_SES_pdi_groups.rds")
+fit_SES_nd  <- readRDS("../Data/fit_SES_nd_groups.rds")
+fit_SES_mh  <- readRDS("../Data/fit_SES_mh_groups.rds")
 
 # Base theme
 base_theme <- theme_bw(base_size = 7.5) +
@@ -237,3 +251,5 @@ p <- (mh | pdi | nd) +
   )
 
 p + plot_annotation(tag_levels = "A", tag_suffix = ")")
+```
+

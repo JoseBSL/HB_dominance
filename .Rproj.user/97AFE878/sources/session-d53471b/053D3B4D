@@ -1,0 +1,26 @@
+{
+    "id": "053D3B4D",
+    "path": "~/R_projects/HB_dominance/Scripts/Sensitivity_analyses/sp_interactions>1/5_2_export_modelling_output_over1.R",
+    "project_path": "Scripts/Sensitivity_analyses/sp_interactions>1/5_2_export_modelling_output_over1.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1776956745035.0,
+    "source_on_save": false,
+    "relative_order": 20,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "51,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1762861786,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1762861786,
+    "read_only": false,
+    "read_only_alternatives": []
+}
