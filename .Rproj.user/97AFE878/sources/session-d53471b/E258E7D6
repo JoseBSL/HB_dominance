@@ -1,0 +1,27 @@
+{
+    "id": "E258E7D6",
+    "path": "~/R_projects/HB_dominance/Scripts/Sensitivity_analyses/Functional_groups/More_groups/Visualization_dominance_by_group.R",
+    "project_path": "Scripts/Sensitivity_analyses/Functional_groups/More_groups/Visualization_dominance_by_group.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1776342369497.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled2",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "238,55",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1776958599,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1776958599933,
+    "read_only": false,
+    "read_only_alternatives": []
+}

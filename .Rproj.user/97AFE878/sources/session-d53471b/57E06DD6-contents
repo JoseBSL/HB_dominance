@@ -1,0 +1,61 @@
+
+library(dplyr)
+
+
+pollinator_metrics_ses = readRDS("Data/pollinator_metrics_ses.rds")
+
+
+modelling_data %>% 
+  summarise(
+    n_rows = n(),
+    across(
+      c(SES_morisita_horn, SES_norm_degree, SES_pdi),
+      list(
+        n_na  = ~ sum(is.na(.)),
+        pct_na = ~ mean(is.na(.)) * 100
+      ),
+      .names = "{.fn}_{.col}"
+    )
+  )
+colnames(pollinator_metrics_ses)
+
+pollinator_metrics_ses %>% 
+  select(id) %>% 
+  distinct(id) %>% 
+  nrow()
+
+modelling_data = readRDS("Data/modelling_data.rds")
+
+
+modelling_data %>% 
+  select(final_id) %>% 
+  distinct(final_id) %>% 
+  nrow()
+
+
+library(dplyr)
+
+# Unique IDs
+metrics_ids   <- unique(pollinator_metrics_ses$id)
+modelling_ids <- unique(modelling_data$final_id)
+
+# Overlap and differences
+n_metrics   <- length(metrics_ids)
+n_modelling <- length(modelling_ids)
+
+n_overlap <- sum(modelling_ids %in% metrics_ids)
+
+only_modelling <- setdiff(modelling_ids, metrics_ids)
+only_metrics   <- setdiff(metrics_ids, modelling_ids)
+
+# Summary table
+summary_df <- tibble(
+  n_modelling = n_modelling,
+  n_metrics = n_metrics,
+  n_overlap = n_overlap,
+  pct_modelling_in_metrics = n_overlap / n_modelling * 100,
+  n_only_modelling = length(only_modelling),
+  n_only_metrics = length(only_metrics)
+)
+
+summary_df
