@@ -18,7 +18,7 @@ library(sf)
 library(ggplot2)
 library(giscoR)
 library(ggtext)
-
+library(ggspatial)
 
 #--------------------------------------------------
 # 0. Load data
@@ -154,7 +154,7 @@ grid_agg <- join %>%
       weighted.mean(prop_apis_study, w = n_pollinators, na.rm = TRUE)
     },
     n_studies    = n(),
-    total_weight = sum(n_pollinators, na.rm = TRUE),
+    total_weight = mean(n_pollinators, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -191,15 +191,15 @@ ggplot() +
   geom_sf(
     data  = cntries,
     fill  = "grey85",
-    color = "black",
+    color = "grey40",
     size  = 0.1
   ) +
   # Light background grid (all same size, low alpha)
   geom_sf(
     data  = grid_full,
     fill  = NA,
-    color = "grey90",
-    size  = 0.1
+    color = "grey93",
+    size  = 0.01
   ) +
   # Squares at centroids: size = total pollinator richness per cell,
   # fill = weighted proportion of Apis interactions
@@ -212,8 +212,8 @@ ggplot() +
       fill = prop_apis_perc
     ),
     shape  = 22,  # filled square
-    color  = "black",
-    stroke = 0.1
+    color  = "grey30",
+    stroke = 0.05
   ) +
   coord_sf(
     xlim   = c(2200000, 7150000),
@@ -223,13 +223,14 @@ ggplot() +
   scale_fill_viridis_c(
     option   = "C",
     na.value = NA,
+    begin = 0.05,
     name     = "Honeybee interactions (%)",
     breaks   = c(0,20,40,60),
     labels   = c(0,20,40,60),
     limits   = c(0, 70), 
   ) +
   scale_size_continuous(
-    name = "Total pollinator\nrichness",
+    name = "Mean pollinator\nrichness",
     range = c(1, 6.5)  # tweak as needed
   ) +
   guides(
@@ -239,7 +240,7 @@ ggplot() +
   theme_minimal() +
   theme(
     panel.grid.major = element_blank(),
-    panel.background = element_rect(fill = NA),
+    panel.background = element_rect(fill = "#F7FBFF", colour = NA),
     panel.border     = element_rect(colour = "black", fill = NA, size = 1),
     legend.position  = "right",
     legend.key.size = unit(0.5, "lines"),
@@ -248,7 +249,15 @@ ggplot() +
     legend.title    = element_markdown(size = 10),
     plot.margin      = margin(t = 5, r = 5, b = 5, l = 5)) +
   xlab(NULL) +
-  ylab(NULL)
+  ylab(NULL) +
+annotation_scale(
+  location = "br",
+  style = "bar",
+  width_hint = 0.15,
+  unit_category = "metric",
+  text_cex = 0.65,
+  line_width = 0.4
+)
 
 
 ```
